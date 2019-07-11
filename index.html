@@ -49,5 +49,5 @@ private static async Task TestAsyncParallel()
   Note: tasks created <a href="https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.-ctor?view=netframework-4.8">via constructor (i.e.: new Task(...))</a> start cold, not hot
   <br>
   <br>
-  If you're using the <a href="https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?view=netframework-4.8">Task.WhenAll(IEnumerable&lquo;Task&lquo;TResult&rquo;&rquo;) overload</a>, just ensure you dont blow up your computer & that the code remains scalable (e.g.: if number of tasks in list grows, or if task is updated in future to do more IO/CPU)
+  If you're using the <a href="https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?view=netframework-4.8">Task.WhenAll(IEnumerable&lt;Task&lt;TResult&gt;&gt;) overload</a>, just ensure you dont blow up your computer & that the code remains scalable (e.g.: if number of tasks in list grows, or if task is updated in future to do more IO/CPU)
 </p>
