@@ -34,7 +34,9 @@ private static async Task TestAsyncParallel()
 <p>
   Some articles claim that code sample #1 is not faster, since returned Task are hot (i.e.: Task-based Async Pattern).
   <br>
+  <br>
   However this is incorrect, because the 2nd task isn't "returned" until the 1st await finishes.
+  <br>
   <br>
   If you're using the Task.WhenAll(IEnumerable<Task<TResult>>) overload, just ensure you dont blow up your computer & that the code remains scalable (e.g.: if number of tasks in list grows, or if task is updated in future to do more IO/CPU)
 </p>
