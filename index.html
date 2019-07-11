@@ -40,10 +40,13 @@ private static async Task TestAsyncParallel()
 <blockquote class="imgur-embed-pub" lang="en" data-id="a/IvsrYQD" data-context="false" ><a href="//imgur.com/a/IvsrYQD"></a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
 
 <p>
-  Some articles claim that code sample #1 is not faster, since returned Task are hot (i.e.: Task-based Async Pattern).
+  Some articles claim that code sample #1 is not faster, since returned Task are hot (i.e.: <a href="https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/task-based-asynchronous-pattern-tap">Task-based Async Pattern</a>).
   <br>
   <br>
-  However this is incorrect, because the 2nd task isn't "returned" until the 1st await finishes.
+  However this is incorrect. Even though hot tasks "start" as soon as theyre returned, the 2nd task isn't "returned" until the 1st await finishes.
+  <br>
+  <br>
+  Note: tasks created via constructor (i.e.: new Task()) start cold, not hot
   <br>
   <br>
   If you're using the Task.WhenAll(IEnumerable&lquo;Task&lquo;TResult&rquo;&rquo;) overload, just ensure you dont blow up your computer & that the code remains scalable (e.g.: if number of tasks in list grows, or if task is updated in future to do more IO/CPU)
