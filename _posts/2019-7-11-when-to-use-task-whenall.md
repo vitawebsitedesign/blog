@@ -1,5 +1,6 @@
 ---
-layout: default
+title: This is my title
+layout: post
 ---
 <h1>Why Task.WhenAll() improves performance</h1>
 
