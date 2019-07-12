@@ -1,3 +1,8 @@
+---
+title: This is my title
+layout: post
+---
+
 Converting a MVC page to load content asynchronously
 Using jQuery.load(...) and PartialView, we can load stuff async.
 
