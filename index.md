@@ -6,5 +6,6 @@ layout: default
 {% for post in site.posts %}
   <article class="{% if forloop.first %}first{% elsif forloop.last %}last{% else %}middle{% endif %}">
 	{{ post }}
+	</article>
 	{% if forloop.last %}{% else %}<div class="separater"></div>{% endif %}
 {% endfor %}
