@@ -7,5 +7,8 @@ layout: default
   <article class="{% if forloop.first %}first{% elsif forloop.last %}last{% else %}middle{% endif %}">
 	{{ post }}
 	</article>
-	{% if forloop.last %}{% else %}---{% endif %}
+	{% if forloop.last %}
+	{% else %}
+	---
+	{% endif %}
 {% endfor %}
