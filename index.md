@@ -2,7 +2,7 @@
 title: Blog
 layout: default
 ---
-## x
+## y
 {% for post in site.posts %}
   <article class="{% if forloop.first %}first{% elsif forloop.last %}last{% else %}middle{% endif %}">
 
