@@ -1,5 +1,5 @@
 ---
-title: This is my title
+title: When and how Task.WhenAll improves performance
 layout: post
 ---
 <h1>Why Task.WhenAll() improves performance</h1>
