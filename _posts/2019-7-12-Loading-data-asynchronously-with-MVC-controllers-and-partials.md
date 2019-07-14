@@ -1,5 +1,5 @@
 ---
-title: This is my title
+title: Loading data asynchronously with MVC controllers and partials
 layout: post
 ---
 
