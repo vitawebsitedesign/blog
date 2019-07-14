@@ -4,11 +4,15 @@ layout: post
 ---
 
 Html.DropDownFor() generates below html:
+```html
 <select name="some-property" value="taco" />
+```
 
 Html.CheckBoxFor()?:
+```html
 <input name="some-property" type="checkbox" value="false" />
 <input name="some-property" type="hidden" value="false" />
+```
 
 MVC generates 2 html elements - the actual vanilla HTML checkbox, and a HTML hidden field to support postbacks.
 
