@@ -20,3 +20,8 @@ CSS sprites are implemented via background-image, which likely means you wont be
 Images have the alt attribute, which improve accessibility for both users (captions) and text-only screen readers.
 
 If the alt attribute is a functional requirement, then CSS spritesheets are more of a pitfall. But if not, then they become an available option.
+
+## Whats even the point if individual images are cached too?
+Individual images get cached, so technically if you have 2 pages that use the same image url/domain, then yes, the 2nd http request wont be made the file will just be fetched from browser cache.
+
+CSS spritesheets are more for the situation where you have 3 sprites, 1 used on 1 page, and 1 on another page. In this case, the 2nd http request wont be made. Whereas if you just used <img />, the 2nd http request would slow down 2nd page initial load speed.
