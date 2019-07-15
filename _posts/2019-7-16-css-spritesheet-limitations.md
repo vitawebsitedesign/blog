@@ -11,9 +11,6 @@ Another useful benefit is that it's an alternative to prevent "image flickering"
 ## Against
 The common argument AGAINST is that they complicate CSS, they present a less malleable solution, but most importantly, represent a larger load time when the spritesheet needs to be first downloaded. While the latter pitfall can be mitigated through CDN hosting, this post assumes no CDN.
 
-## When should i use css spritesheets?
-This aint a black and white question - you gotta analyze your priorities by order and ensure that the benefits outweigh the costs.
-
 ## Lost semantic meaning
 CSS sprites are implemented via background-image, which likely means you wont be using an <img />.
 
@@ -25,3 +22,6 @@ If the alt attribute is a functional requirement, then CSS spritesheets are more
 Individual images get cached, so technically if you have 2 pages that use the same image url/domain, then yes, the 2nd http request wont be made the file will just be fetched from browser cache.
 
 CSS spritesheets are more for the situation where you have 3 sprites, 1 used on 1 page, and 1 on another page. In this case, the 2nd http request wont be made. Whereas if you just used <img />, the 2nd http request would slow down 2nd page initial load speed.
+
+## When should i use css spritesheets?
+This aint a black and white question - you gotta analyze your priorities, order them based on business requirements and technical limitations, and ensure that the benefits significantly outweigh the dragbacks.
