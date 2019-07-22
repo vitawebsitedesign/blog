@@ -11,5 +11,10 @@ layout: default
 			{{ post.content }}
 		</p>
 	</article>
+	<br />
+	<br />
+	<hr />
+	<br />
+	<br />
   {% endfor %}
 </section>
