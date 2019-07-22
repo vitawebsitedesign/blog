@@ -1,6 +1,10 @@
-## Automated end-to-end testing cost/benefit analysis
-
+---
+title: Hollistic cost/benenfit analysis of testing approaches
+layout: post
+author: michael_nguyen
+---
 Below is summary of common test approaches:
+
 ### Manual unit testing
 Difficult to consistently obtain high test coverage
 

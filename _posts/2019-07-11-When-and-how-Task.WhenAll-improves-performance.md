@@ -4,7 +4,6 @@ layout: post
 author: michael_nguyen
 ---
 
-## Why Task.WhenAll() improves performance<
 Task.WhenAll() runs asynchronous tasks in parallel.
 
 "Parallel" = multiple tasks running at the same time, "Asynchronous" = tasks dont block main thread.
