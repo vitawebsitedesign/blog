@@ -3,10 +3,13 @@ title: Blog
 layout: default
 ---
 
-<ul>
+<section>
   {% for post in site.posts %}
-    <li>
-      <a href="{{ post.url }}">{{ post.title }}</a>
-    </li>
+	<article>
+		<h1>{{ post.title }}</h1>
+		<p>
+			{{ post.content }}
+		</p>
+	</article>
   {% endfor %}
-</ul>
+</section>
