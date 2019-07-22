@@ -1,6 +1,7 @@
 ---
 title: CSS Spritesheet Limitations
 layout: post
+author: michael_nguyen
 ---
 
 ## For

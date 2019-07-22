@@ -1,6 +1,7 @@
 ---
 title: Loading data asynchronously with MVC controllers and partials
 layout: post
+author: michael_nguyen
 ---
 
 Converting a MVC page to load content asynchronously
