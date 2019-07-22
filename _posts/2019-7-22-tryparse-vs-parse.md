@@ -14,6 +14,7 @@ Starting from Int32.cs:TryParse(...), it eventually calls Number.cs:ParseNumber(
 
 ### Code flow summary inside .NET
 Int32.cs:TryParse(String, out Int32)
+
 ```c#
 // Parses an integer from a String. Returns false rather
 // than throwing exceptin if input is invalid
@@ -23,15 +24,18 @@ public static bool TryParse(String s, out Int32 result) {
 	return Number.TryParseInt32(s, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out result);
 }
 ```
-Number.cs:TryParseInt32
-	sets out result to 0 before progressing (so if it fails, result equals 0)
-	passes in arg parseDecimal=false (this comes into play @ ParseNumber(...))
-Number.cs:TryStringToNumber
-Number.cs:ParseNumber
-	since no stringbuilder, bigNumber = false
-	eat away sign
-	while current pointer is digit character
-		add char to NumberBuffer
+
+
+1. Number.cs:TryParseInt32
+..*	sets out result to 0 before progressing (so if it fails, result equals 0)
+..* passes in arg parseDecimal=false (this comes into play @ ParseNumber(...))
+2. Number.cs:TryStringToNumber
+3. Number.cs:ParseNumber
+..* since no stringbuilder, bigNumber = false
+..* eat away sign
+..* while current pointer is digit character
+..* add char to NumberBuffer
+
 ```c#
 ...
 while(true) {
@@ -48,9 +52,10 @@ while(true) {
 ...
 ```
 
-	digEnd = 0
-	adds characters to NumberBuffer (i.e.: the ref NumberBuffer param)
-	add null-terminator
+4. digEnd = 0
+5. adds characters to NumberBuffer (i.e.: the ref NumberBuffer param)
+6. add null-terminator
+
 ```c#
 if (bigNumber)
 	sb.Append('\0');
@@ -58,8 +63,9 @@ else
 	number.digits[digEnd] = '\0';
 ```
 
-	try parse exponent
-	set string param (passed by ref) to char pointer (address)
+7. try parse exponent
+8. set string param (passed by ref) to char pointer (address)
+
 ```c#
 if ((state & StateDigits) != 0) {
 	...
@@ -71,9 +77,10 @@ if ((state & StateDigits) != 0) {
 	...
 }
 ```
-	
-returns to Number.cs:TryParseInt32(), which then calls NumberToInt32(ref NumberBuffer, ref Int32)
-	works backwards on NumberBuffer to set Int32 (which was passed by ref)
+
+At this point, it returns to Number.cs:TryParseInt32(), which then calls NumberToInt32(ref NumberBuffer, ref Int32).
+
+Which then works backwards on NumberBuffer to set Int32 (which was passed by ref).
 
 ### Behavioural explanation
 So if ParseNumber fails, the call to TryParseInt32 returns false.
@@ -90,12 +97,13 @@ Starting from Int32.cs:Parse(...), it follows a very different path but ends up 
 The difference is in HOW the return result from Number.cs:ParseNumber() is handled.
 
 ### Code flow summary inside .NET
-Int32.cs:Parse(String)
-Number.cs:ParseInt32
-Number.cs:StringToNumber
-Number.cs:ParseNumber
-	(same as above)
-	returned F = throws format exception
+1. Int32.cs:Parse(String)
+2. Number.cs:ParseInt32
+3. Number.cs:StringToNumber
+4. Number.cs:ParseNumber
+..* (same as above)
+..* returned F = throws format exception
+
 ```c#
 internal unsafe static Single ParseSingle(String value, NumberStyles options, NumberFormatInfo numfmt) {
 	...
