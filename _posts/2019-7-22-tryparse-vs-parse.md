@@ -5,6 +5,8 @@ For parse failure:
 
 But what code inside .NET framework 4.8 produces this behaviour?
 
+Lets look inside it using https://referencesource.microsoft.com/#mscorlib
+
 ## TryParse
 Below we look at overload TryParse(String, out Int32).
 
