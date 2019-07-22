@@ -1,7 +1,11 @@
+---
+title: TryParse vs Parse - how .NET framework produces their behaviour internally for non-number strings
+layout: post
+---
 ## TryParse vs Parse - how .NET framework produces their behaviour internally for non-number strings
 For parse failure:
-..* TryParse returns false with out parameter = 0
-..* Parse throws format exception
+1. TryParse returns false with out parameter = 0
+2. Parse throws format exception
 
 But what code inside .NET framework 4.8 produces this behaviour?
 
@@ -16,10 +20,6 @@ Starting from Int32.cs:TryParse(...), it eventually calls Number.cs:ParseNumber(
 Int32.cs:TryParse(String, out Int32)
 
 ```c#
-// Parses an integer from a String. Returns false rather
-// than throwing exceptin if input is invalid
-// 
-[Pure]
 public static bool TryParse(String s, out Int32 result) {
 	return Number.TryParseInt32(s, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out result);
 }
@@ -27,14 +27,14 @@ public static bool TryParse(String s, out Int32 result) {
 
 
 1. Number.cs:TryParseInt32
-..*	sets out result to 0 before progressing (so if it fails, result equals 0)
-..* passes in arg parseDecimal=false (this comes into play @ ParseNumber(...))
-2. Number.cs:TryStringToNumber
-3. Number.cs:ParseNumber
-..* since no stringbuilder, bigNumber = false
-..* eat away sign
-..* while current pointer is digit character
-..* add char to NumberBuffer
+2. sets out result to 0 before progressing (so if it fails, result equals 0)
+3. passes in arg parseDecimal=false (this comes into play @ ParseNumber(...))
+4. Number.cs:TryStringToNumber
+5. Number.cs:ParseNumber
+6. since no stringbuilder, bigNumber = false
+7. eat away currency sign (so we just get the 1st digit of the actual number to be parsed)
+8. while current pointer is digit character
+9. add char to NumberBuffer
 
 ```c#
 ...
@@ -101,8 +101,7 @@ The difference is in HOW the return result from Number.cs:ParseNumber() is handl
 2. Number.cs:ParseInt32
 3. Number.cs:StringToNumber
 4. Number.cs:ParseNumber
-..* (same as above)
-..* returned F = throws format exception
+5. returns false for invalid strings (that represent numbers) = throws format exception
 
 ```c#
 internal unsafe static Single ParseSingle(String value, NumberStyles options, NumberFormatInfo numfmt) {
@@ -118,6 +117,8 @@ internal unsafe static Single ParseSingle(String value, NumberStyles options, Nu
 		if (sTrim.Equals(numfmt.NaNSymbol)) {
 			return Single.NaN;
 		}
+
+		// This is the line we care about
 		throw new FormatException(Environment.GetResourceString("Format_InvalidString"));
 	}
 	...
@@ -128,5 +129,5 @@ internal unsafe static Single ParseSingle(String value, NumberStyles options, Nu
 Hence, ParseNumber is called again.
 
 The difference is that:
-..* When Number.cs:ParseNumber(...) returns false to TryParse, TryParse doesnt throw an exception and just returns false to its caller
-..* When Number.cs:ParseNumber(...) returns false to StringToNumber, StringToNumber throws the format exception (bubbling all the way back to Int32.cs:Parse(...))
+1. When Number.cs:ParseNumber(...) returns false to TryParse, TryParse doesnt throw an exception and just returns false to its caller
+2. When Number.cs:ParseNumber(...) returns false to StringToNumber, StringToNumber throws the format exception (bubbling all the way back to Int32.cs:Parse(...))

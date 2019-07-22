@@ -1,3 +1,7 @@
+---
+title: SQL Server seek predicate precedence
+layout: post
+---
 ## SQL Server seek predicate precedence
 When a table seek occurs, you may see something called "seek predicate" in execution plan:
 
