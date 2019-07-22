@@ -1,6 +1,7 @@
 ---
 title: When and how Task.WhenAll improves performance
 layout: post
+author: michael_nguyen
 ---
 
 ## Why Task.WhenAll() improves performance<

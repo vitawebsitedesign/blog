@@ -1,6 +1,7 @@
 ---
 title: MVC Html.CheckboxFor Shenanigans
 layout: post
+author: michael_nguyen
 ---
 
 Html.DropDownFor() generates below html:

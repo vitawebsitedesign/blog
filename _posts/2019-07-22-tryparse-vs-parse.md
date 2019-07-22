@@ -1,6 +1,7 @@
 ---
 title: TryParse vs Parse - how .NET framework produces their behaviour internally for non-number strings
 layout: post
+author: michael_nguyen
 ---
 ## TryParse vs Parse - how .NET framework produces their behaviour internally for non-number strings
 For parse failure:
