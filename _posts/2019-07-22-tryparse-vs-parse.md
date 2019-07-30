@@ -1,7 +1,7 @@
 ---
 title: TryParse vs Parse - how .NET framework produces their behaviour internally for non-number strings
 layout: post
-author: michael_nguyen
+author: Michael Nguyen
 ---
 For parse failure:
 1. TryParse returns false with out parameter = 0
