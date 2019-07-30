@@ -8,6 +8,7 @@ layout: default
 	<article>
 		<h1>{{ post.title }}</h1>
 		<p><i>{{ post.date | date_to_long_string: "ordinal" }}</i></p>
+		<p>{{ post.author }}</p>
 		<p>
 			{{ post.content }}
 		</p>
