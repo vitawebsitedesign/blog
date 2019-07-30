@@ -1,7 +1,7 @@
 ---
 title: SQL Server seek predicate precedence
 layout: post
-author: michael_nguyen
+author: Michael Nguyen
 ---
 When a table seek occurs, you may see something called "seek predicate" in execution plan:
 

@@ -1,7 +1,7 @@
 ---
 title: CSS Spritesheet Limitations
 layout: post
-author: michael_nguyen
+author: Michael Nguyen
 ---
 ## For
 The common argument FOR using CSS spritesheets is that they reduce the http requests (network congestion). This is important because of browser http persistent connection request limits (thereby speeding up page load times).
