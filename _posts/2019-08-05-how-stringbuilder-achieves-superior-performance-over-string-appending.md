@@ -52,7 +52,8 @@ public static String Concat(String str0, String str1) {
 So when you read the msdn String documentation:
 
 > A String object is called immutable ...
-https://docs.microsoft.com/en-us/dotnet/api/system.string?view=netframework-4.8#immutability-and-the-stringbuilder-class
+
+[https://docs.microsoft.com/en-us/dotnet/api/system.string?view=netframework-4.8#immutability-and-the-stringbuilder-class](https://docs.microsoft.com/en-us/dotnet/api/system.string?view=netframework-4.8#immutability-and-the-stringbuilder-class)
 
 The call to FastAllocateString (unmanaged assembly code) is how string achieves immutability when using the + overload.
 
@@ -83,11 +84,11 @@ internal static unsafe void wstrcpy(char *dmem, char *smem, int charCount)
 
 ## Analysis
 
-We can see that for StringBuilder.Append, instead of re-allocating memory for a new string instance & returning the combined result, it just expands the capacity at the existing memory address and appends content (i.e.: the "value" param) at the end via pointer.
+We can see that for `StringBuilder.Append`, instead of re-allocating memory for a new string instance & returning a pointer to the new address, it just expands the capacity at the existing memory address and appends content (i.e.: the `value` param) at the end via pointer.
 
-We can also see the "square own capacity by 2 when i get too big" code.
+We can also see the ["square own capacity by 2 when i get too big"](https://docs.microsoft.com/en-us/dotnet/api/system.text.stringbuilder?view=netframework-4.8#how-stringbuilder-works) code.
 
-Hence, both of these points prove that how StringBuilder operates compared to String.Concat(String, String).
+Hence, both of these points prove that how StringBuilder operates compared to `String.Concat(String, String)`.
 
 ## Should i always use StringBuilder instead of String += ?
 By performing memory capacity expansion & string addition in-place (instead of allocating memory at new addresses), the .NET team has given developers an option to sacrifice immutability for speed.
