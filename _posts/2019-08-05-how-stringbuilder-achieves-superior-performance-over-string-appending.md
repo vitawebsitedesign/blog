@@ -5,9 +5,9 @@ author: Michael Nguyen
 ---
 string is faster than stringBuilder append:
 
-![alt text](https://github.com/vitawebsitedesign/blog/blob/master/assets/string-vs-stringbuilder-benchmark-summary.jpg "Benchmark (summary)")
+![Benchmark (textual)](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/string-vs-stringbuilder-benchmark-summary.jpg "Benchmark (textual)")
 
-![alt text](https://github.com/vitawebsitedesign/blog/blob/master/assets/string-vs-stringbuilder-benchmark-chart.jpg "Benchmark (difference)")
+![Benchmark (visual)](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/string-vs-stringbuilder-benchmark-chart.jpg "Benchmark (visual)")
 
 But HOW is it faster?
 
