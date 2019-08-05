@@ -3,13 +3,39 @@ title: How StringBuilder achieves superior performance over string appending
 layout: post
 author: Michael Nguyen
 ---
-string is faster than stringBuilder append:
+StringBuilder is faster than String for append operations.
+
+## Benchmark
+
+```c#
+private static void DoString(int loop)
+{
+	string str = "a";
+	for (var i = 0; i < loop; i++)
+	{
+		str += "a";
+	}
+}
+```
+
+```c#
+private static void DoStringBuilder(int loop)
+{
+	var sb = new StringBuilder("a");
+	for (var i = 0; i < loop; i++)
+	{
+		sb.Append("a");
+	}
+}
+```
+
+[Repo](https://github.com/vitawebsitedesign/stringbuilder-string-benchmark)
 
 ![Benchmark (textual)](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/string-vs-stringbuilder-benchmark-summary.jpg "Benchmark (textual)")
 
 ![Benchmark (visual)](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/string-vs-stringbuilder-benchmark-chart.jpg "Benchmark (visual)")
 
-But HOW is it faster?
+Lets check it out.
 
 ## String
 Below is .NET 4.8 source for String.Concat(String, String) (i.e.: += overload):
