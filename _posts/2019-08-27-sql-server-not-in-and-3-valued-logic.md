@@ -123,11 +123,14 @@ WHERE rating NOT IN (
 )
 ```
 
-## ANSI_NULLS
+## ANSI_NULLS remarks
 SQL Server default for [ANSI_NULLS](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-ansi-nulls-transact-sql?view=sql-server-2017#remarks) will change to ON in the future.
 
 If you like living on the edge with ANSI_NULLS still off, you can continue using your precious c#-like `X = NULL` and `X <> NULL` operators (instead of `IN` and `NOT IN`).
 
-But the future will eventually arrive, and Microsoft always gets their way, especially when its for the better.
+But as of this post, the future has alraedy arrived, and Microsoft has laid down the law.
 
-The examples ive given assume you like standards, and that you have flipped `ANSI_NULLS` to `ON` like a real basement nerd developer.
+The examples ive given assume you like standards, and that you have either:
+
+* flipped `ANSI_NULLS` to `ON` like a real dev
+* or created a new'ish database that already has the `ON` default
