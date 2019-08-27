@@ -10,13 +10,17 @@ SQL Server has 3 possible outcomes for boolean expression: [`true`, `false` and 
 
 `Unknown` happens when comparing to unknown values, for example `NULL`.
 
-Example: `SELECT * FROM dbo.taco WHERE rating NOT IN (1, NULL)`
+Example:
+
+```sql
+SELECT * FROM dbo.taco WHERE rating NOT IN (1, NULL)
+```
 
 ## Kleene logic?
-Kleenes logic just means that an evaluated result of UNKNOWN is equivalent to false. So this means SQL Server wont return these kinds of rows.
+Kleenes logic just means that an evaluated result of UNKNOWN is equivalent to false. So this means SQL Server wont return rows with that evaluation.
 
 ## In action
-`IN` is just shorthand for multiple `AND` statements:
+`IN` is just shorthand for multiple `OR` statements:
 
 ```sql
 SELECT * FROM dbo.taco WHERE rating IN (1, 2)
@@ -28,7 +32,7 @@ is
 SELECT * FROM dbo.taco WHERE (rating = 1 OR rating = 2)
 ```
 
-and `NOT IN` is just shorthand for multiple `OR` statements:
+and `NOT IN` is just shorthand for multiple `AND` statements:
 
 ```sql
 SELECT * FROM dbo.taco WHERE rating NOT IN (1, 2)
@@ -41,7 +45,9 @@ SELECT * FROM dbo.taco WHERE rating <> 1 AND rating <> 2
 ```
 
 ## Where does Kleenes logic differ?
-The most important part of Kleenes logic is that `FALSE = UNKNOWN` evaluates to `FALSE` (contradictory to [redgate's article](https://www.red-gate.com/simple-talk/sql/learn-sql-server/sql-and-the-snare-of-three-valued-logic/)).
+The most important part of Kleenes logic is that `FALSE = UNKNOWN` evaluates to `FALSE`.
+
+This is contradictory to [redgate's article](https://www.red-gate.com/simple-talk/sql/learn-sql-server/sql-and-the-snare-of-three-valued-logic/)), you should instead refer to [Wikipedia's matrixes](https://en.wikipedia.org/wiki/Three-valued_logic#Kleene_and_Priest_logics).
 
 So...
 
@@ -66,12 +72,15 @@ SELECT * FROM dbo.taco WHERE rating <> 1 AND rating <> NULL
 
 the `rating <> NULL` bit is evil. Since comparison to NULL is UNKNOWN, and UNKNOWN evaluations are equivalent to `FALSE` in Kleene logic, no rows will match.
 
-And SQL Server aint gonna save your butt with a compile-time error either. Its just gonna sit back and watch you cry.
+And SQL Server aint gonna save your butt with a compile-time error either. Its just gonna sit back and watch you suffer.
 
 ## Correctly using NOT IN in Kleene logic
-To get the behaviour you exist, you'll have to convince the Microsoft CEO to change SQL Server's logic system.
+To get the behaviour you expect, you can:
 
-But an easier way is to just weed out the NULLs, so that the only possible evaluations are `TRUE` and `FALSE`. Example:
+* Convince the Microsoft CEO to change SQL Server's logic system.
+* Or just weed out the NULLs, so that the only possible evaluations are `TRUE` and `FALSE`
+
+Example:
 
 ```sql
 SELECT *
@@ -92,7 +101,7 @@ WHERE rating NOT IN (
 )
 ```
 
-A realistic example would be:
+And a realistic example would be:
 ```sql
 SELECT *
 FROM dbo.taco
@@ -117,8 +126,8 @@ WHERE rating NOT IN (
 ## ANSI_NULLS
 SQL Server default for [ANSI_NULLS](https://docs.microsoft.com/en-us/sql/t-sql/statements/set-ansi-nulls-transact-sql?view=sql-server-2017#remarks) will change to ON in the future.
 
-If youre ANSI_NULLS are still off, you can continue using `=` and `<>` (instead of `IN` and `NOT IN`).
+If you like living on the edge with ANSI_NULLS still off, you can continue using your precious c#-like `X = NULL` and `X <> NULL` operators (instead of `IN` and `NOT IN`).
 
 But the future will eventually arrive, and Microsoft always gets their way, especially when its for the better.
 
-The examples ive given assume you like standards, and that you have flipped ANSI_NULLS to ON like a real developer.
+The examples ive given assume you like standards, and that you have flipped `ANSI_NULLS` to `ON` like a real basement nerd developer.
