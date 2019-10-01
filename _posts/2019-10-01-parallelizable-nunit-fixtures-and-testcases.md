@@ -34,7 +34,7 @@ It takes in 1 argument, which happens to be an enumeration that allows us to use
 ```
 
 ## ParallelScope.Children
-The official nUnit description for this "parallel mode" is:
+The official [nUnit description](https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration) for this "parallel mode" is:
 
 > "child tests may be run in parallel with one another"
 
@@ -85,7 +85,7 @@ internal class MyFixture1
 ```
 
 In this example, we expect A to start first, then after 3 seconds, B starts too. Running this fixture prints out:
-```bash
+``` 
 a start
 b start
 b end
@@ -138,7 +138,7 @@ internal class MyFixture2
 ```
 
 Which prints out:
-```bash
+``` 
 a start
 b start
 b end
@@ -154,13 +154,13 @@ Test case C (from fixture 2) did not start until the 1st fixture ended.
 What about the flip side - what if we want both fixtures to run in parallel, but the test cases in each fixture to run non-parallel (i.e.: sequentially)?
 
 ## ParallelScope.Fixtures
-From nUnit documentation:
+From [nUnit documentation](https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration):
 
 > "fixtures may be run in parallel with one another"
 
 If we run our previous C# example again (except with `ParallelScope.Fixtures` in place of `ParallelScope.Children`), we get:
 
-```bash
+``` 
 c start
 a start
 c end
@@ -178,7 +178,7 @@ But what if we want to go full throttle - running all fixtures in parallel, AND 
 ## ParallelScope.All
 From nUnit documentation:
 
-> "the test and its descendants may be run in parallel with others at the same level"
+> "the test and its descendants may be run in parallel [with others at the same level](https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration)"
 
 "same level" means that if you place the `Parallelizable` on a fixture, then it will run parallel with other fixtures. And if you place it on a testcase, then it will run parallel with the other testcases in that fixture.
 
@@ -210,11 +210,11 @@ What happens if we want more fine-grain control over whats parallel and whats no
 
 Enter `ParallelScope.Self`. From the nUnit documentation:
 
-> "the test itself may be run in parallel with other tests"
+> "the test itself may be run [in parallel with other tests](https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration)"
 
 and
 
-> "valid on: classes, methods"
+> "valid on: [classes, methods](https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration)"
 
 This "parallel mode" is basically `ParallelScope.Fixtures` & `ParallelScope.Children` rolled into 1, and we can put it on fixtures and/or testcases. Here's the code i'm gonna run to test this "parallel mode" out:
 ```c#
@@ -264,7 +264,7 @@ internal class MyFixture2
 ```
 
 Based on the above, we expect both fixtures to start at the same time. With both test fixtures having a parallel & non-parallel testcase, do the parallelizable testcases run first, or do the non-parallel ones run first? *drumroll*:
-```bash
+``` 
 c start
 a start
 b start
@@ -277,7 +277,7 @@ a end
 
 Ah just as expecte... wait a sec! The hell's goin on over here?
 
-```bash
+``` 
 a start
 b start
 ```
@@ -321,7 +321,7 @@ internal class MyFixture2
 ```
 
 And when running just this 1 fixture, the output is:
-```bash
+``` 
 [10:19:17.405 PM] c start
 [10:19:20.404 PM] d start
 [10:19:20.406 PM] d end
