@@ -1,5 +1,5 @@
 ---
-title: Exploring all parallel methods in the nUnit execution framework
+title: Exploring the parallel options in the nUnit execution framework
 layout: post
 author: Michael Nguyen
 ---
