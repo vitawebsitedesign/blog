@@ -419,8 +419,8 @@ internal class MyFixture2
 	public async Task G()
 	{
 		await Task.Delay(3000);
-		TestContext.Progress.WriteLine("Fixture3/TestCase3 start");
-		TestContext.Progress.WriteLine("Fixture3/TestCase3 end");
+		TestContext.Progress.WriteLine("Fixture2/TestCase3 start");
+		TestContext.Progress.WriteLine("Fixture2/TestCase3 end");
 	}
 
 	// Here we omit the Parallelizable attribute, so by default, it will run in non-parallel mode
