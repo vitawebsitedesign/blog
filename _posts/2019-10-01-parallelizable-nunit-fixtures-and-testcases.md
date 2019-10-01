@@ -434,7 +434,7 @@ These first 2 are ones we marked as parallel, and the other 2 are the ones we ma
 ...
 ```
 
-In fact, `Fixture1/TestCase2` & `Fixture2/TestCase2` are waiting for a free thread too, even though we marked them for parallel execution. This proves that nUnit parallel execution is not a magical unicorn that uses black magic to create extra threads. Life is indeed hard once the cpu limit gets hit.
+In fact, `Fixture1/TestCase2` & `Fixture2/TestCase2` are waiting for a free thread too, even though we marked them for parallel execution. Ah.. such is life.
 
 ## STA/MTA?
 The nUnit documentation sometimes uses the abbreviation "STA" or "MTA". These just refer to "Single Threaded Architecture" & "Multi Threaded Architecture", essentially the non-parallel & parallel nUnit architectures.
