@@ -171,16 +171,16 @@ d end
 b end
 ```
 
-With A & C starting at the same time, this proves that both fixtures start at the same time (i.e.: were running in parallel). Also, B only starting after A ends, & D only starts after C ends. Hence, the testcases inside each fixture ran sequentially.
+With `A` & `C` starting at the same time, this proves that both fixtures start at the same time (i.e.: were running in parallel). Also, `B` only starts after `A` ends, & `D` only starts after `C` ends. Hence, the testcases inside each fixture ran sequentially.
 
-But what if we want to go full throttle - running all fixtures in parallel, AND the test cases in each fixture in parallel too. This means we want to fire all fixtures and all test cases side-by-side.
+But what if we want to go full throttle - running all fixtures in parallel *AND* the test cases in each fixture in parallel too. This means we want to fire all fixtures and all test cases side-by-side.
 
 ## ParallelScope.All
 From nUnit documentation:
 
 > "the test and its descendants may be run in parallel [with others at the same level](https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration)"
 
-"same level" means that if you place the `Parallelizable` on a fixture, then it will run parallel with other fixtures. And if you place it on a testcase, then it will run parallel with the other testcases in that fixture.
+*same level* means that if you place the `Parallelizable` on a fixture, then that fixture will run parallel with other fixtures. And if you place it on a testcase, then that testcase will run parallel with the other testcases in that fixture.
 
 Running our previous example again (except with `ParallelScope.All` in place of `ParallelScope.Fixtures`), we get:
 
@@ -197,10 +197,10 @@ Running our previous example again (except with `ParallelScope.All` in place of 
 
 `B` and `D` started 3 seconds after `A` and `C` started, and they started BEFORE `A` and `C` ended. This proves that everything was parallel; both the fixtures & their test cases.
 
-And now, i must explain the final "parallel mode": `ParallelScope.Self`.
+And now, i must explain the final "parallel mode": `ParallelScope.Self`
 
 ## Let the confusion begin! ParallelScope.All vs ParallelScope.Self
-Ok, so far we've gone through:
+So far we've gone through:
 
 * Parallel fixtures (`ParallelScope.Fixtures`)
 * Parallel testcases in a fixture (`ParallelScope.Children`)
@@ -284,7 +284,9 @@ b start
 
 What? `B` started before `A` finished? But we marked `A` as parallel and `B` as non-parallel!
 
-Its almost as if both test cases in each fixture ran in parallel! Wouldn't it have made sense for the parallel ones to get first dibs, then all the non-parallel peasants line up after it?
+Its almost as if both test cases in each fixture ran in parallel! Wouldn't it have made more sense for the parallel ones to get first dibs, then all the non-parallel peasants line up after it?
+
+![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
 
 To get a clearer picture on what's going on here, let's add another non-parallel testcase to `MyFixture2`, then only run that fixture (instead of both fixtures):
 ```c#
@@ -337,6 +339,8 @@ The point here is that when you mix parallel & non-parallel ingredients into a b
 Some analogies to help understand this are:
 * Theres a line for VIP's, and another line for plebs/normies. Both lines run side-by-side (much like 2 bouncers each guarding 1 queue each outside of a club).
 * Theres a fast road lane, and a slow road lane. Both lanes run side-by-side (much like a highway).
+
+![fast lane slow lane](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/overtaking-lane.jpg "fast lane slow lane")
 
 ## Hitting the CPU core limit
 Finally we can move on to exciting stuff - hitting the thread limit in nUnit!
