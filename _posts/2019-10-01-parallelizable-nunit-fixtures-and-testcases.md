@@ -24,7 +24,7 @@ And this means that for the below examples:
 
 > "By default, [no parallel execution takes place](https://github.com/nunit/docs/wiki/Framework-Parallel-Test-Execution)"
 
-## Example: ParallelScope.Children
+## ParallelScope.Children
 Firstly, think of parallelable tests as 2 layers - test cases (the functions), and fixtures (the classes that hold the test cases). The nUnit docs on this attribute state:
 
 > "child tests may be run in parallel with one another"
@@ -142,7 +142,7 @@ Test case C did not start until the 1st fixture ended.
 
 What about the flip side - what if we want both fixtures to run in parallel, but the test cases in each fixture to run non-parallel (i.e.: sequentially)?
 
-## Example: ParallelScope.Fixtures
+## ParallelScope.Fixtures
 > "fixtures may be run in parallel with one another"
 
 Running our previous example again (except with `ParallelScope.Fixtures` above both fixtures, instead of `[Parallelizable(ParallelScope.Children)]`), we get:
@@ -162,7 +162,7 @@ This proves that the fixtures start at the same time (i.e.: were running in para
 
 But what if we want to go full throttle - running all fixtures in parallel, AND the test cases in each fixture in parallel too. This means we want to fire all fixtures and all test cases immediately.
 
-## Example: ParallelScope.All
+## ParallelScope.All
 > "the test and its descendants may be run in parallel with others at the same level"
 
 Running our previous example again (except with `ParallelScope.All` above both fixtures, instead of `[Parallelizable(ParallelScope.Fixtures)]`), we get:
@@ -182,7 +182,7 @@ This proves that everything was parallel; the fixtures & their test cases.
 
 So thats all the cases right?
 
-## The confusion begins: ParallelScope.All vs ParallelScope.Self?
+## Let the confusion begin! ParallelScope.All vs ParallelScope.Self
 Ok so we've gone through parallel fixtures, parallel testcases, and the "all cylinders firing" option called `ParallelScope.All`.
 
 What happens if we want finer control over whats parallel? Perhaps i want 2 fixtures to be parallel, with 1 of the test cases in parallel, and the other in non-parallel mode?
@@ -190,7 +190,8 @@ What happens if we want finer control over whats parallel? Perhaps i want 2 fixt
 `ParallelScope.Self` is the fourth option, and is all about allows us to get what we want.
 
 > "the test itself may be run in parallel with other tests"
-> "Valid On: Classes, Methods"
+
+> "valid on: classes, methods"
 
 ```c#
 [Parallelizable(ParallelScope.Self)]
@@ -310,3 +311,140 @@ When you mix parallel & non-parallel attributes into a bowl, you essentially get
 Other ways of thinking about this:
 * Theres a line for the VIP's, and another line for the plebs. Both lines run side-by-side (much like 2 bouncers outside a club).
 * Theres a fast road lane, and a slow road lane. Both lanes run side-by-side (much like a highway).
+
+## Hitting the CPU core limit!
+On my 4-core machine, nUnit will only be able to use 4 threads.
+
+If exceed 4 threads, a test that is meant to be parallel is instead blocked until a thread gets freed.
+
+To demonstrate this point, we need a more full-scale example: 2 parallel fixtures, each containing 2 parallel testscases & 2 non-parallel testcases
+```c#
+[Parallelizable(ParallelScope.Self)]
+internal class MyFixture1
+{
+	[Parallelizable(ParallelScope.Self)]
+	[Test]
+	public async Task A()
+	{
+		TestContext.Progress.WriteLine("Fixture1/TestCase1 start");
+		await Task.Delay(8000);
+		TestContext.Progress.WriteLine("Fixture1/TestCase1 end");
+	}
+
+	[Parallelizable(ParallelScope.Self)]
+	[Test]
+	public async Task B()
+	{
+		TestContext.Progress.WriteLine("Fixture1/TestCase2 start");
+		await Task.Delay(8000);
+		TestContext.Progress.WriteLine("Fixture1/TestCase2 end");
+	}
+
+	// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode
+	[Test]
+	public async Task C()
+	{
+		await Task.Delay(3000);
+		TestContext.Progress.WriteLine("Fixture1/TestCase3 start");
+		TestContext.Progress.WriteLine("Fixture1/TestCase3 end");
+	}
+
+	// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode
+	[Test]
+	public async Task D()
+	{
+		await Task.Delay(3000);
+		TestContext.Progress.WriteLine("Fixture1/TestCase4 start");
+		TestContext.Progress.WriteLine("Fixture1/TestCase4 end");
+	}
+}
+
+[Parallelizable(ParallelScope.Self)]
+internal class MyFixture2
+{
+	[Parallelizable(ParallelScope.Self)]
+	[Test]
+	public async Task E()
+	{
+		TestContext.Progress.WriteLine("Fixture2/TestCase1 start");
+		await Task.Delay(8000);
+		TestContext.Progress.WriteLine("Fixture2/TestCase1 end");
+	}
+
+	[Parallelizable(ParallelScope.Self)]
+	[Test]
+	public async Task F()
+	{
+		TestContext.Progress.WriteLine("Fixture2/TestCase2 start");
+		await Task.Delay(8000);
+		TestContext.Progress.WriteLine("Fixture2/TestCase2 end");
+	}
+
+	// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode
+	[Test]
+	public async Task G()
+	{
+		await Task.Delay(3000);
+		TestContext.Progress.WriteLine("Fixture3/TestCase3 start");
+		TestContext.Progress.WriteLine("Fixture3/TestCase3 end");
+	}
+
+	// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode
+	[Test]
+	public async Task H()
+	{
+		await Task.Delay(3000);
+		TestContext.Progress.WriteLine("Fixture2/TestCase4 start");
+		TestContext.Progress.WriteLine("Fixture2/TestCase4 end");
+	}
+}
+```
+
+And the output (on my 4-core machine) is:
+```bash
+[8:40:44.906 PM] Fixture1/TestCase1 start
+[8:40:44.907 PM] Fixture2/TestCase1 start
+[8:40:46.635 PM] Fixture1/TestCase3 start
+[8:40:46.640 PM] Fixture2/TestCase3 start
+[8:40:46.642 PM] Fixture1/TestCase3 end
+[8:40:46.657 PM] Fixture2/TestCase3 end
+[8:40:49.698 PM] Fixture1/TestCase4 start
+[8:40:49.700 PM] Fixture2/TestCase4 start
+[8:40:49.702 PM] Fixture1/TestCase4 end
+[8:40:49.704 PM] Fixture2/TestCase4 end
+[8:40:49.714 PM] Fixture1/TestCase2 start
+[8:40:49.716 PM] Fixture2/TestCase2 start
+[8:40:51.629 PM] Fixture1/TestCase1 end
+[8:40:51.633 PM] Fixture2/TestCase1 end
+[8:40:57.715 PM] Fixture1/TestCase2 end
+[8:40:57.725 PM] Fixture2/TestCase2 end
+```
+
+Pay attention to the first 4 lines (representing the 4 threads running on my 4-core machine):
+Core 1: Fixture1/TestCase1
+Core 2: Fixture2/TestCase1
+Core 3: Fixture1/TestCase3
+Core 4: Fixture2/TestCase3
+
+These first 2 are ones we marked as parallel, and the other 2 are the ones we marked non-parallel. Until one of them ends, a thread won't be free to run another testcase:
+```c#
+...
+[8:40:46.657 PM] Fixture2/TestCase3 end
+[8:40:49.698 PM] Fixture1/TestCase4 start
+...
+```
+
+In fact, `Fixture1/TestCase2` & `Fixture2/TestCase2` are waiting for a free thread too, even though we marked them for parallel execution. This proves that nUnit parallel execution is not a magical unicorn that uses black magic to create extra threads. Life is indeed hard once the cpu limit gets hit.
+
+## STA/MTA?
+The nUnit documentation sometimes uses the abbreviation "STA" or "MTA". These just refer to "Single Threaded Architecture" & "Multi Threaded Architecture", essentially the non-parallel & parallel nUnit architectures.
+
+## Deterministic?
+No dice - parallel tests are non-deterministic. Everytime you hit the run button, parallel tests may end in different orders. This means your tests need to be thread-safe to produce determinsitic pass/fail results.
+
+## Final thoughts
+The nUnit team worked hard to give us parallelism. We should understand how it works so that we can leverage it to dramatically improve test execution scalability & developer productivity.
+
+And lets face it, when devs start twiddling their thumbs because the build takes so damn long, its a sign to roll up your sleeves & start improving the efficiency of internal processes, such as the test suite execution speed.
+
+Given the non-deterministic nature of tests, the nUnit team gave devs a viable option of improving test execution speed - incremental migration. And this is the `Parallelizable` attribute that we know of today.
