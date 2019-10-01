@@ -1,46 +1,55 @@
 ---
-title: Exploring parallel behaviour in nUnit fixtures & testcases
+title: Exploring all parallel methods in the nUnit execution framework
 layout: post
 author: Michael Nguyen
 ---
-Every build server has a limit, and once you hit it you'll find your nUnit tests slowing down the build process.
+Every build server has a cpu limit, and once you hit it you'll find your nUnit tests taking forever to finish, ultimately slowing down your build process.
 
 Thankfully, we can run nUnit tests in parallel by using the `Parallelizable` attribute. This tells the runner to run "stuff" in parallel mode.
 
-I use the word "stuff", because theres [4 different parallel modes](https://github.com/nunit/docs/wiki/Parallelizable-Attribute) to choose from. The documentation explains it kind've ambiguously, so here's my take on it:
-* `ParallelScope.All` 
-All
-Children
-Fixtures
-Self
+I use the word "stuff", because theres multiple "levels" (i'll get to this later) we can configure, using [4 different parallel modes](https://github.com/nunit/docs/wiki/Parallelizable-Attribute) to choose from.
 
-Since this can get confusing pretty fast, i wanna explain this through examples. These are listed in a different order than the documentation, in order to aid understandability.
+And hence, this can get confusing fast. I'll explain this through examples, which are listed in a different order than the documentation in order to aid understandability.
 
 Before starting this party, the below examples use the Visual Studio nUnit runner (rather than the CLI runner). This is an important fact because:
 
 > "Parallel execution is [the default behavior](https://github.com/nunit/docs/wiki/Engine-Parallel-Test-Execution) when running multiple assemblies together using the nunit3-console runner"
 
-And this means that for the below examples:
+And since we aren't using the CLI tool to run our tests, then:
 
-> "By default, [no parallel execution takes place](https://github.com/nunit/docs/wiki/Framework-Parallel-Test-Execution)"
+> "By [default](https://github.com/nunit/docs/wiki/Framework-Parallel-Test-Execution), no parallel execution takes place"
+
+Note: in order to understand all of this, try think of parallelable tests as 2 layers - your test cases (i.e.: the functions), and your fixtures (i.e.: the classes that hold the test cases).
+
+## Parallelizable
+The `Parallelizable` C# attribute is something you can put on test fixture classes and/or test case functions. It makes it run in parallel on a separate, new thread. Example:
+
+```c#
+[Parallelizable()]
+```
+
+It takes in 1 argument, which happens to be an enumeration that allows us to use 4 possible "parallel modes". And the first one we will look at is `ParallelScope.Children`, which is usually used on test fixtures (the class that holds your test functions). Example:
+```c#
+[Parallelizable(ParallelScope.Children)]
+```
 
 ## ParallelScope.Children
-Firstly, think of parallelable tests as 2 layers - test cases (the functions), and fixtures (the classes that hold the test cases). The nUnit docs on this attribute state:
+The official nUnit description for this "parallel mode" is:
 
 > "child tests may be run in parallel with one another"
 
-In other words: test cases in a fixture will run in parallel, but the fixture itself will NOT run in parallel with other fixtures`
+In english: test cases in a fixture will run in parallel, but the fixture itself will NOT run in parallel with other fixtures`
 
-For example, a test case would be a function:
+For example, given a test case:
 ```c#
-	[Test]
-	public async Task MyTestCase()
-	{
-		...
-	}
+[Test]
+public async Task MyTestCase()
+{
+	...
+}
 ```
 
-And a test fixture would be the class that holds the function:
+A test fixture for this test case would be a class:
 ```c#
 internal class MyFixture
 {
@@ -52,7 +61,7 @@ internal class MyFixture
 }
 ```
 
-So by adding `ParallelScope.Children` attribute to the class, test cases inside the fixture would now run in parallel:
+By using `ParallelScope.Children`, we make test cases inside the fixture run in parallel:
 ```c#
 [Parallelizable(ParallelScope.Children)]
 internal class MyFixture1
@@ -75,7 +84,7 @@ internal class MyFixture1
 }
 ```
 
-And this prints out:
+In this example, we expect A to start first, then after 3 seconds, B starts too. Running this fixture prints out:
 ```bash
 a start
 b start
@@ -83,7 +92,9 @@ b end
 a end
 ```
 
-Proving that they run in parallel. And to prove that the fixture does NOT run in parallel with other fixtures, lets add another fixture to the party:
+And this output proves that they run in parallel.
+
+To prove that the fixture does NOT run in parallel with other fixtures, lets add another fixture to the party:
 ```c#
 [Parallelizable(ParallelScope.Children)]
 internal class MyFixture1
@@ -138,14 +149,16 @@ d end
 c end
 ```
 
-Test case C did not start until the 1st fixture ended.
+Test case C (from fixture 2) did not start until the 1st fixture ended.
 
 What about the flip side - what if we want both fixtures to run in parallel, but the test cases in each fixture to run non-parallel (i.e.: sequentially)?
 
 ## ParallelScope.Fixtures
+From nUnit documentation:
+
 > "fixtures may be run in parallel with one another"
 
-Running our previous example again (except with `ParallelScope.Fixtures` above both fixtures, instead of `[Parallelizable(ParallelScope.Children)]`), we get:
+If we run our previous C# example again (except with `ParallelScope.Fixtures` in place of `ParallelScope.Children`), we get:
 
 ```bash
 c start
@@ -158,41 +171,50 @@ d end
 b end
 ```
 
-This proves that the fixtures start at the same time (i.e.: were running in parallel), but the testcases inside each fixture run sequentially.
+With A & C starting at the same time, this proves that both fixtures start at the same time (i.e.: were running in parallel). Also, B only starting after A ends, & D only starts after C ends. Hence, the testcases inside each fixture ran sequentially.
 
-But what if we want to go full throttle - running all fixtures in parallel, AND the test cases in each fixture in parallel too. This means we want to fire all fixtures and all test cases immediately.
+But what if we want to go full throttle - running all fixtures in parallel, AND the test cases in each fixture in parallel too. This means we want to fire all fixtures and all test cases side-by-side.
 
 ## ParallelScope.All
+From nUnit documentation:
+
 > "the test and its descendants may be run in parallel with others at the same level"
 
-Running our previous example again (except with `ParallelScope.All` above both fixtures, instead of `[Parallelizable(ParallelScope.Fixtures)]`), we get:
+"same level" means that if you place the `Parallelizable` on a fixture, then it will run parallel with other fixtures. And if you place it on a testcase, then it will run parallel with the other testcases in that fixture.
+
+Running our previous example again (except with `ParallelScope.All` in place of `ParallelScope.Fixtures`), we get:
 
 ```bash
-a start
-c start
-d start
-b start
-d end
-b end
-a end
-c end
+[9:47:23.362 PM] c start
+[9:47:23.362 PM] a start
+[9:47:26.365 PM] b start
+[9:47:26.368 PM] d start
+[9:47:26.369 PM] b end
+[9:47:26.371 PM] d end
+[9:47:31.369 PM] c end
+[9:47:31.372 PM] a end
 ```
 
-This proves that everything was parallel; the fixtures & their test cases.
+`B` and `D` started 3 seconds after `A` and `B` started, and they started BEFORE `A` and `B` ended. This proves that everything was parallel; both the fixtures & their test cases.
 
-So thats all the cases right?
+And now, i must explain `ParallelScope.Self`.
 
 ## Let the confusion begin! ParallelScope.All vs ParallelScope.Self
-Ok so we've gone through parallel fixtures, parallel testcases, and the "all cylinders firing" option called `ParallelScope.All`.
+Ok so we've gone through parallel fixtures (`ParallelScope.Fixtures`), parallel testcases in a fixture (`ParallelScope.Children`), and the "all cylinders firing" option (`ParallelScope.All`).
 
-What happens if we want finer control over whats parallel? Perhaps i want 2 fixtures to be parallel, with 1 of the test cases in parallel, and the other in non-parallel mode?
+What happens if we want finer control over whats parallel and whats not parallel? What if we want 2 fixtures to be parallel, with 1 of the test cases in parallel, and 1 other test case in non-parallel mode?
 
-`ParallelScope.Self` is the fourth option, and is all about allows us to get what we want.
+`ParallelScope.Self` is the fourth option, and this option is all about fine-grain control.
+
+From the nUnit documentation:
 
 > "the test itself may be run in parallel with other tests"
 
+and
+
 > "valid on: classes, methods"
 
+And here's the code i'm gonna run to test this "parallel mode" out:
 ```c#
 [Parallelizable(ParallelScope.Self)]
 internal class MyFixture1
@@ -239,7 +261,7 @@ internal class MyFixture2
 }
 ```
 
-Here we expect both fixtures to start at the same time. But... do the parallelizable testcases run first, or do the non-parallel ones run first? *drumroll*:
+Based on the above, we expect both fixtures to start at the same time. With both test fixtures having a parallel & non-parallel testcase, do the parallelizable testcases run first, or do the non-parallel ones run first? *drumroll*:
 ```bash
 c start
 a start
@@ -258,9 +280,11 @@ a start
 b start
 ```
 
-What? B started before A finished? Its almost as if both test cases in each fixture ran in parallel! Wouldn't it have made sense for the parallel ones to get first dibs, then all the non-parallel peasants line up to run sequentially?
+What? `B` started before `A` finished? But we marked `A` as parallel and `B` as non-parallel!
 
-To get a clearer picture, let's add another non-parallel testcase to `MyFixture2`:
+Its almost as if both test cases in each fixture ran in parallel! Wouldn't it have made sense for the parallel ones to get first dibs, then all the non-parallel peasants line up after it?
+
+To get a clearer picture on what's going on here, let's add another non-parallel testcase to `MyFixture2`, then only run that fixture (instead of both fixtures):
 ```c#
 [Parallelizable(ParallelScope.Self)]
 internal class MyFixture2
@@ -304,20 +328,24 @@ e end
 c end
 ```
 
-It seems that even though C & D start at the same time, the 2nd non-parallel testcase `E` only started after `D` ended.
+It seems that even though `C` & `D` start at the same time, `E` (the 2nd non-parallel testcase) only started after `D` ended.
 
-When you mix parallel & non-parallel attributes into a bowl, you essentially get the equivalent of 2 queues - 1 for parallel fixtures/testcases, and 1 for non-parallel fixtures/testcases.
+The point here is that when you mix parallel & non-parallel ingredients into a bowl, you essentially get the equivalent of 2 queues - 1 for parallel execution, and 1 for non-parallel execution.
 
-Other ways of thinking about this:
-* Theres a line for the VIP's, and another line for the plebs. Both lines run side-by-side (much like 2 bouncers outside a club).
+Analogies to help understand this include:
+* Theres a line for VIP's, and another line for plebs/normies. Both lines run side-by-side (much like 2 bouncers each guarding 1 queue each outside of a club).
 * Theres a fast road lane, and a slow road lane. Both lanes run side-by-side (much like a highway).
 
-## Hitting the CPU core limit!
-On my 4-core machine, nUnit will only be able to use 4 threads.
+## Hitting the CPU core limit
+Finally we can move on to exciting stuff - hitting the thread limit in nUnit!
 
-If exceed 4 threads, a test that is meant to be parallel is instead blocked until a thread gets freed.
+I have a 4-core machine. From nUnit documentation:
 
-To demonstrate this point, we need a more full-scale example: 2 parallel fixtures, each containing 2 parallel testscases & 2 non-parallel testcases
+> NUnit uses the processor count or 2, whichever is greater. For example, on a four processor machine [the default value is 4](https://github.com/nunit/docs/wiki/LevelOfParallelism-Attribute)
+
+So technically speaking, nUnit will only be able to use up to 4 threads. Once it needs more, all bets are off the table. Any "extra" tests which are meant to run in parallel will instead be blocked until a thread becomes free.
+
+To demonstrate this point, we need a bigger example. Hows about: 2 parallel fixtures, each containing 2 parallel testcases & 2 non-parallel testcases
 ```c#
 [Parallelizable(ParallelScope.Self)]
 internal class MyFixture1
@@ -400,7 +428,7 @@ internal class MyFixture2
 }
 ```
 
-And the output (on my 4-core machine) is:
+Awwww yeah, this is more like it. And the output on my 4-core machine is:
 ```bash
 [8:40:44.906 PM] Fixture1/TestCase1 start
 [8:40:44.907 PM] Fixture2/TestCase1 start
@@ -426,7 +454,7 @@ Core 2: Fixture2/TestCase1
 Core 3: Fixture1/TestCase3
 Core 4: Fixture2/TestCase3
 
-These first 2 are ones we marked as parallel, and the other 2 are the ones we marked non-parallel. Until one of them ends, a thread won't be free to run another testcase:
+These first 2 are ones we marked as parallel, and the other 2 are the ones we marked non-parallel. Until one of them ends, a thread won't be free to run another testcase, as proven by:
 ```c#
 ...
 [8:40:46.657 PM] Fixture2/TestCase3 end
@@ -434,17 +462,18 @@ These first 2 are ones we marked as parallel, and the other 2 are the ones we ma
 ...
 ```
 
-In fact, `Fixture1/TestCase2` & `Fixture2/TestCase2` are waiting for a free thread too, even though we marked them for parallel execution. Ah.. such is life.
+In fact, `Fixture1/TestCase2` & `Fixture2/TestCase2` are waiting for a free thread too, even though we marked them for parallel execution. Ah... isn't parallelism quite an interesting specimen to observe?
 
-## STA/MTA?
+## Closing notes
+### STA/MTA?
 The nUnit documentation sometimes uses the abbreviation "STA" or "MTA". These just refer to "Single Threaded Architecture" & "Multi Threaded Architecture", essentially the non-parallel & parallel nUnit architectures.
 
-## Deterministic?
+### Deterministic?
 No dice - parallel tests are non-deterministic. Everytime you hit the run button, parallel tests may end in different orders. This means your tests need to be thread-safe to produce determinsitic pass/fail results.
 
-## Final thoughts
+### Conclusion
 The nUnit team worked hard to give us parallelism. We should understand how it works so that we can leverage it to dramatically improve test execution scalability & developer productivity.
 
-And lets face it, when devs start twiddling their thumbs because the build takes so damn long, its a sign to roll up your sleeves & start improving the efficiency of internal processes, such as the test suite execution speed.
+And lets face it - when devs start spinning in their chairs & twiddling their thumbs because the build takes so damn long, its a sign to roll up your sleeves & start improving the efficiency of internal processes, such as test suite execution speed.
 
-Given the non-deterministic nature of tests, the nUnit team gave devs a viable option of improving test execution speed - incremental migration. And this is the `Parallelizable` attribute that we know of today.
+Given the non-deterministic nature of tests, the nUnit team gave devs a business-viable migration option when it comes to improving their test execution speed; incremental migration. And this is the `Parallelizable` attribute that we know of today.
