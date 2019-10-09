@@ -1,5 +1,5 @@
 ---
-title: Calculating Big O notation for SQL Server queries
+title: Calculating Big O complexity for SQL Server execution plans
 layout: post
 author: Michael Nguyen
 ---
