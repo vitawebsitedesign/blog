@@ -9,7 +9,7 @@ The best way to verify algorithm scalability is by expressing the performance th
 * Big O: a formulae that defines both the upper bound of scalability
 * Big Theta: a formulae that defines both the lower & upper bounds of scalability
 
-This post will run through Big O by analysing SQL Server execution plans. I'm starting with a fresh db, so feel free to follow along:
+This post will run through Big O by analysing SQL Server execution plans. I'm starting with a fresh db, so if you feel like a fat slob and have cheeseball stains on your shirt, get some finger exercise by following along:
 ```sql
 CREATE DATABASE big_o;
 GO
@@ -36,7 +36,7 @@ WHERE id = 10
 
 The sql above creates a blank table with 100 rows, then runs a query with a predicate usable by the implicit clustered index.
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O1](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(1).jpg "O1")
 
 And we can prove this! The execution plan for this query identifies only 1 "Number of Rows Read", & this table has 100 rows.
 
@@ -55,7 +55,7 @@ SELECT id, val
 FROM dbo.items
 ```
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O n](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n).jpg "O n")
 
 This scan involved reading 100 rows. And you know what? If there was 1000 rows in the table, there would be 1000 reads.
 
@@ -78,7 +78,7 @@ Here, we scan all of our 100 rows, then join each row to itself.
 * ... or 2 * (number of rows in our table)
 * ... or 2n
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O 2n](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(2n).jpg "O 2n")
 
 And we can verify this through the execution plan. Both scan operations did 100 reads, therefore giving us 200 reads total, or "double the number of rows in our table".
 
@@ -90,7 +90,7 @@ SELECT 1
 FROM dbo.items a CROSS JOIN dbo.items b
 ```
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O n2](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n%5E2).jpg "O n2")
 
 Now the database engine scans our table twice, each one rakin in 100 rows. Then they're joined using a NESTED loop, giving us a total of 10000 rows.
 
@@ -102,7 +102,7 @@ In fact, table scans to nested loop joins is like comparing oranges to apples - 
 
 Hence, we will ignore the 200 reads (which are ignorable from a scalability calculation standpoint), and only care about the real "meat" - the number of inner loop executions to produce the cartesian product.
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O n2](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n%5E2).jpg "O n2")
 
 Looking at the execution plan again, we wanna focus on "Actual Rows" & "Number of executions". Since the inner join operation is executed once start-to-finish, this leaves us with the 10000 inner loop operations to produce our cartestian product. So:
 
@@ -150,11 +150,11 @@ FROM cte_tree;
 
 Before we dive into the good stuff, here's the result set:
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O n2 result](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/recursive-tree-result.jpg "O n2 result")
 
 And NOW, BEHOLD THE ALL MIGHTY PLAN!
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O n2 execution plan](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/recursive-tree-execution-plan.jpg "O n2 execution plan")
 
 The 2 parts to focus on are:
 
@@ -217,9 +217,9 @@ FROM cte_scale;
 
 Here we chuck in values between 1 & 64. Then let the recursive CTE roll!
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O log n result](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o-logn-result.jpg "O log n result")
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O log n execution plan](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o-logn-execution-plan.jpg "O log n execution plan")
 
 Firstly, lets rule out constants again. Since we always start with 1 row read (for tables with at least 1 row), we can ignore the Index Scan that retrieves 1 row for the anchor portion of our CTE.
 
@@ -275,7 +275,7 @@ SELECT val, initial, step
 FROM cte_scale;
 ```
 
-![queue](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg "queue")
+![O n log n execution plan](https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n%20log%20n).jpg "O n log n execution plan")
 
 Firstly, we ignored constants when calculating Big O. So let's weed out the constant 8 rows we use as our recursive CTE anchor.
 
