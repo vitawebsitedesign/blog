@@ -187,11 +187,11 @@ Again, since we only care about the "meat", the "*Number of Rows Returned*" is o
 * ...or `# of nodes in tree` * `# of nodes in tree`
 * ...or `# of nodes in tree` squared
 * ...or `n` squared
-* ...or `n<sup>2</sup>`
+* ...or n<sup>2</sup>
 
-Awesome work! We were able to calculate the worst-case time complexity for this algorithm, and express it as a convenient math formula - `O(n<sup>2</sup>)`.
+Awesome work! We were able to calculate the worst-case time complexity for this algorithm, and express it as a convenient math formula - O(n<sup>2</sup>).
 
-Our example table only had 49 rows. Imagine running this kind of unscalable algorithm with millions of rows! `O(n<sup>2</sup>)` algorithms are the truly the kinds of horrors the SQL devil injects into our dreams after we skip church.
+Our example table only had 49 rows. Imagine running this kind of unscalable algorithm with millions of rows! O(n<sup>2</sup>) algorithms are the truly the kinds of horrors the SQL devil injects into our dreams after we skip church.
 
 Enough about the bad. Now to identify the kind of scalability we should be aiming for in our query tuning...
 
@@ -253,9 +253,9 @@ So far we have covered:
 * O(log n), the king we love most
 * O(n), not bad, but must be tolerated in most cases when you need alot of unpaginated data
 * O(2n), an unscalable algorithm that makes you gag, but not puke your guts out
-* O(n<sup>2</sup>), which is the most evil of all. To me, `O(n<sup>2</sup>)` is just as bad as exponential or factorial scalabilities, because these kinds of algorithms all just get terminated halfway through anyways, either by the user exiting, or by the server in order to open resources for other connections.
+* O(n<sup>2</sup>), which is the most evil of all. To me, O(n<sup>2</sup>) is just as bad as exponential or factorial scalabilities, because these kinds of algorithms all just get terminated halfway through anyways, either by the user exiting, or by the server in order to open resources for other connections.
 
-There is 1 more "common" Big O complexity that fits somewhere between `O(2n)` and `O(n<sup>2</sup>)`.
+There is 1 more "common" Big O complexity that fits somewhere between `O(2n)` and O(n<sup>2</sup>).
 
 Its possible to get away with this kind of scalability, but sooner or later, they strike production from the shadows, and you'll regret the day you slouched in your chair, lit a cigar & proclaimed yourself as the king of database tuning.
 
