@@ -122,21 +122,16 @@ internal static unsafe void wstrcpy(char *dmem, char *smem, int charCount)
 
 Explanation: `Concat` calls `FastAllocateString` (which returns a new String instance), then `wstrcpy` is called twice to copy both strings into the new String instance.
 
-In the above case, .NET does NOT mutate the original memory address space. We can illustrate this concept in a simpler, yet equivalent example:
+In other words - it's a pure function, and that is what makes `System.String` immutable.
 
-```c#
-var var1 = "bleh";
-var str = $"{var1} goes the weasle";
-Console.WriteLine(var1);	// Prints "bleh"
-Console.WriteLine(str);		// Prints "bleh goes the weasle"
-```
+At this point, strong evidence exists that pure functions allow one to prevent state modification by making mutation methods return new instances instead.
 
-As we can see, pure functions prevent state modification by making mutation methods return new instances.
-
-It's almost as if pure functions allows one to achieve **true** immutability.
+It's almost as if pure functions is all the .NET team needs to bring devs **true** immutability.
 
 ## True immutability
-And this is what happened. Microsoft sat around a table, stroking their beards with glee, and gave us `System.Collections.Immutable` - a namespace full of interfaces and classes that make mutable methods return new instances (instead of modifying state):
+And this is what happened. Microsoft sat around a table, stroking their beards with glee, and started using pure functions.
+
+The end result? `System.Collections.Immutable`. A namespace full of interfaces and classes that make mutable methods return new instances (instead of modifying state):
 ```c#
 var items = new[] { 1 }.ToImmutableList();
 var wrapper = items.Add(2);		// Add() returns a new instance, rather than modifying the memory in-place
@@ -170,20 +165,22 @@ public sealed partial class ImmutableList<T> : ...
 }
 ```
 
-And now consumers can't do something stupid. Hey, who's complaining? - it gives you one less thing to worry about in the complex world of programming.
+And just like that, *true immutability* has been achieved.
 
-Does this mean you should rewrite all code to use Immutable collections instead?
+Now consumers can't do something stupid. Hey, who's complaining? - it gives you one less thing to worry about in the complex world of programming.
+
+Gosh, it seems so powerful. Does this mean you should rewrite all your code to use Immutable collections instead?
 
 ## There is never a free lunch
-Every software decision is about trading off something for something. Just because you see the word "immutable" doesn't mean you should *always* use it.
+Every software decision is about trading off something for something. Just because you see the word "immutable" doesn't mean you should start touching yourself and use it without thought.
 
-After all, switching from mutable to immutable collections is trading performance for [encapsulation](https://en.wikipedia.org/wiki/Encapsulation_(computer_programming)).
+After all, switching from mutable to immutable collections trades efficiency for [encapsulation](https://en.wikipedia.org/wiki/Encapsulation_(computer_programming)).
 
-So if you require performance during state modification operations, use mutable collections. Otherwise, strive for immutable collections.
+But basically, unless you require supreme performance during state modification operations, strive for the true immutable collections.
 
 ## Closing notes
-Read-only refers to preventing write methods being called on a variable, & Immutability refers to Pure Methods returning new instances.
+Read-only refers to preventing write methods being called on a variable, & Immutability refers to pure methods returning new instances.
 
-Whilst instantiating new instances costs more time & space than modifying values in-memory, immutable colections prevent users from modifying data.
+Whilst instantiating new instances costs more time & space than modifying values in-memory, immutable colections prevent consumers from tampering with data they're not meant to.
 
-This in turn ensures that the code we designed is only exposed to the use cases that we initially expected at design time, therefore minimising bugs.
+This ensures that the code we designed is only exposed to the use cases that we initially expected at design time, therefore minimising sneaky bugs.
