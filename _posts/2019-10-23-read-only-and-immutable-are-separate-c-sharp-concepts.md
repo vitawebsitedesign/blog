@@ -58,7 +58,17 @@ var readOnlyList = mutableList.AsReadOnly();
 (readOnlyList as IList<int>).Add(1); // Static compilation error: methods like Add are only exposed on List<T>, not IReadOnlyCollection<T>
 ```
 
-Note: when you use [GenericList.AsReadOnly](https://referencesource.microsoft.com/#mscorlib/system/collections/generic/list.cs,2b710ab0bc8866ad) method, it returns a new reference. This is an example of a [Pure Function](https://en.wikipedia.org/wiki/Pure_function):
+## Why bother with read-only collections if state can still be modified?
+Read-only collections "help" encourage consumers to do the right thing, but theres no guarantee that they'll play nicely.
+
+Think of speed limits in school zones. It encourages drivers to slow down and minimise fatalities, but theres nothing there to physically enforce a car's max speed when the driver is in a school zone.
+
+And this is why `System.Collections.Immutable` was introduced.
+
+## Pure Functions?
+[Pure Functions](https://en.wikipedia.org/wiki/Pure_function) examples already exist in C# 6.
+
+For example, [GenericList.AsReadOnly](https://referencesource.microsoft.com/#mscorlib/system/collections/generic/list.cs,2b710ab0bc8866ad):
 ```c#
 public ReadOnlyCollection<T> AsReadOnly() {
 	...
@@ -76,21 +86,7 @@ internal sealed class ReadOnlyCollection<T> ...
 }
 ```
 
-In other words, it modifies memory in-place instead of returning a new instance.
-
-We'll revisit pure functions later.
-
-## Why bother with read-only collections if state can still be modified?
-Read-only collections "help" encourage consumers to do the right thing, but theres no guarantee that they'll play nicely.
-
-Think of speed limits in school zones. It encourages drivers to slow down and minimise fatalities, but theres nothing there to physically enforce a car's max speed when the driver is in a school zone.
-
-And this is why `System.Collections.Immutable` was introduced.
-
-## Pure Functions?
-[Pure Functions](https://en.wikipedia.org/wiki/Pure_function) examples already exist in C# 6.
-
-For example, the string interpolation feature:
+Or the string interpolation feature from C# 6:
 ```c#
 var var1 = "bleh";
 var str = $"{var1} goes the weasle";
@@ -125,7 +121,7 @@ internal static unsafe void wstrcpy(char *dmem, char *smem, int charCount)
 
 `Concat` calls `FastAllocateString` (which returns a new String instance), then `wstrcpy` is called twice to copy both strings into the new String instance.
 
-> .NET does NOT mutate the original memory address space of `var1`!
+In the above case, .NET does NOT mutate the original memory address space of `var1`. Let me illustrate this in a simpler, yet equivalent example:
 
 ```c#
 var var1 = "bleh";
@@ -134,7 +130,7 @@ Console.WriteLine(var1);	// Prints "bleh"
 Console.WriteLine(str);		// Prints "bleh goes the weasle"
 ```
 
-By applying the concept of Pure Functions to `IReadOnlyCollection<T>`, one could achieve **true** immutability.
+It seems that when we apply the concept of Pure Functions to methods that mutate state, one achieves **true** immutability.
 
 ## Full immutability!
 And this is what happened. Microsoft sat around a table, stroking their beards with glee, and gave us `System.Collections.Immutable` - a namespace full of interfaces and classes that make mutable methods return new instances (instead of modifying state):
@@ -159,8 +155,8 @@ public static ImmutableList<TSource> ToImmutableList<TSource>(this IEnumerable<T
 
 And now consumers can't do something stupid. One less thing to worry about in the complex world of programming.
 
-## Tradeoffs
-Just because you see the word "immutable" doesn't mean you should *always* use it.
+## Nothing is free in the programming world
+This is all about tradeoffs. Just because you see the word "immutable" doesn't mean you should *always* use it.
 
 After all, switching from mutable to immutable collections is trading performance for [encapsulation](https://en.wikipedia.org/wiki/Encapsulation_(computer_programming)).
 
