@@ -4,6 +4,7 @@ layout: default
 ---
 
 <section>
+	<h1>All posts:</h1>
 	<ul>
 		{% for post in site.posts %}
 			<li>
@@ -11,6 +12,7 @@ layout: default
 			</li>
 		{% endfor %}
 	</ul>
+	<hr />
 </section>
 <section>
   {% for post in site.posts %}
