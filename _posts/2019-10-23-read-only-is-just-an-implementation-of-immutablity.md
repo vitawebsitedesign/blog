@@ -1,5 +1,5 @@
 ---
-title: Read-only and Immutable are separate C# concepts
+title: Read-only is just an implementation of immutablity
 layout: post
 author: Michael Nguyen
 ---
