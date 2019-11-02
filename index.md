@@ -4,14 +4,14 @@ layout: default
 ---
 
 <section>
-	<h1>All posts:</h1>
-	<ul>
-		{% for post in site.posts %}
-			<li>
-				<a href="{{ post.url }}">{{ post.title }}</a>
-			</li>
-		{% endfor %}
-	</ul>
+	<small>
+		<div>All posts:</div>
+		<ul>
+			{% for post in site.posts %}
+				<li>{{ post.title }}</li>
+			{% endfor %}
+		</ul>
+	</small>
 	<hr />
 </section>
 <section>
