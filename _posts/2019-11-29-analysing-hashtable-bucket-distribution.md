@@ -129,6 +129,49 @@ Lucky us - devs in the old days didnt have this luxury!
 We will go over improvements for the above code later on. For now, i wanna gloss over the dangers of incorrect implementations.
 
 # .NET is NOT a unicorn with a crystal ball
-.NET Core is smart but if you implement 1 of the 3 functions incorrectly, its not gonna function as expected.
+.NET Core is smart but if you implement 1 of the 3 functions incorrectly, its not gonna function as expected:
+```c#
+public bool Contains(T item)
+{
+  ...
 
-Specifically, 
+  if (buckets != null)
+  {
+      ...
+      IEqualityComparer<T>? comparer = _comparer;
+      if (comparer == null)
+      {
+        ...
+      }
+      else
+      {
+          int hashCode = item == null ? 0 : InternalGetHashCode(comparer.GetHashCode(item));
+          // see note at "HashSet" level describing why "- 1" appears in for loop
+          for (int i = buckets[hashCode % buckets.Length] - 1; i >= 0; i = slots[i].next)
+          {
+              if (slots[i].hashCode == hashCode && comparer.Equals(slots[i].value, item))
+              {
+                  return true;
+              }
+              ...
+          }
+      }
+  }
+
+  // either _buckets is null or wasn't found
+  return false;
+}
+```
+
+If you screw up `GetHashCode`, the `slots[i].hashCode == hashCode` bit will return false and all is doomed.
+
+And if you screw up `Equals`, the `comparer.Equals(slots[i].value, item)` bit will return false and all is doomed (again).
+
+So make sure both are correct. But if both serve as equality, why are there 2?
+
+## GetHashCode VS Equals
+A misconception is that both functions should behave like `Equals`.
+
+This is wrong - `GetHashCode` just acts as a bucket ID generator. So make sure GetHashCode is fast, & that your `Equals` implementation prioritizes correctness over speed.
+
+# Limitations
