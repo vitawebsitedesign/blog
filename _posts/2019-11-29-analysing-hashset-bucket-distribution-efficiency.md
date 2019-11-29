@@ -451,4 +451,4 @@ Developers may sometimes forget to override `IEquatable<T>.Equals`, `Object.Equa
 
 Once all 3 functions are implemented CORRECTLY, then you need to focus on a good `GetHashCode` implementation for your situation. For the vast majority of cases, using `unchecked` multiplications with large prime numbers (& combining the result of these operations across all class fields/properties) will give "safe" & efficient bucket distributions.
 
-Inefficient bucket distributions essentially lead to more O(n) HashSet operations, which nullifies the whole point of HashSet - super dooper fast lookups.
+Inefficient bucket distributions essentially lead to more `O(n)` HashSet operations, which nullifies the whole point of HashSet - super dooper fast lookups.
