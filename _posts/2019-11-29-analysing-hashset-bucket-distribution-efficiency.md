@@ -366,6 +366,10 @@ The 3 improvements in this variant are:
 
 All 3 factors give us a much larger range of bucket hash IDs, & this translates into better bucket distribution:
 
+| Total buckets | Buckets occupied | % buckets occupied |
+| ------------- | ---------------- | ------------------ |
+| 4049          | 21               | 0.5186%            |
+
 <TODO IMG>
 
 As you can see, we're getting better but this variant still suffers from the `XOR` producing the same hash code for property value combinations. We need to throw `XOR` out the window immediately.
@@ -389,6 +393,12 @@ public override int GetHashCode()
 
 We just replaced `XOR` with `+`, and damn does this make a difference!
 
+| Total buckets | Buckets occupied | % buckets occupied |
+| ------------- | ---------------- | ------------------ |
+| 4049          | 1950             | 48.1600%           |
+
+What a kick - woohoo! We are finally getting somewhere!!
+
 <TODO IMG>
 
 ## Case 4: multiply with larger values
@@ -410,6 +420,10 @@ public override int GetHashCode()
 }
 ```
 By multiplying by larger values (& supressing overflows via `unchecked`), `GetHashCode()` will generate hash IDs within a larger range. Since we are basically benchmarking here, we care about the worst case, and in most realistic scenarios we could have very large HashSets.
+
+| Total buckets | Buckets occupied | % buckets occupied |
+| ------------- | ---------------- | ------------------ |
+| 4049          | 2310             | 56.8288%           |
 
 <TODO IMG>
 	
