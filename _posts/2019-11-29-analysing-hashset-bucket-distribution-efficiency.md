@@ -364,11 +364,11 @@ The 3 improvements in this variant are:
 * Multiplying the class properties. This causes larger numbers.
 * Usage of co-prime numbers. Co-prime numbers means there is a lower chance of the multiplication operations producing the same result for similar property values.
 
-All 3 factors give us a much larger range of bucket hash IDs, & this translates into better bucket distribution:
+All 3 factors give us a much larger range of bucket hash IDs, & this translates into *wider* bucket distribution with the same *efficiency*:
 
 | Total buckets | Buckets occupied | % buckets occupied |
 | ------------- | ---------------- | ------------------ |
-| 4049          | 21               | 0.5186%            |
+| 4049          | 8                | 0.1976%            |
 
 <TODO IMG>
 
