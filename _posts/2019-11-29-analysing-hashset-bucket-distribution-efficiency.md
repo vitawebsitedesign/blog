@@ -337,7 +337,7 @@ Stats:
 
 Damn son not even 1%! Visualized as radar chart:
 
-![case 1 bucket distribution](/assets/Case 1_ bucket distribution.png)
+![case 1 bucket distribution]({{ site.url }}/assets/Case 1_ bucket distribution.png)
 
 This is a very disturbing situation, so lets quickly move onto a slightly-improved version.
 
