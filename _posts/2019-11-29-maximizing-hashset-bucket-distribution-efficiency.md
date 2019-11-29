@@ -6,24 +6,22 @@ author: Michael Nguyen
 
 ![bucket distribution overview](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-overview.jpg)
 
-.NET Core has the Set abstract data type, & sets operate around this idea of "buckets".
+.NET Core has the [Set abstract data type](https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.iset-1?view=netframework-4.8) which operate around the idea of buckets. Buckets are just lists, so objects that are added get placed into a bucket.
 
-We will look at `GetHashCode` & `Equals` in detail by:
+This post looks at `GetHashCode` & `Equals`:
 
 * Incorrect implementations that "break" .NET Core
 * Correct implementations & why
 * The bucket distribution efficiency of various implementations
 
-# What
-We will use [System.Collections.Generic.HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs) for example collections.
+Before diving into incorrect implementations, we need to understand hashing.
 
-The idea behind hashtables is to trade some memory for a lookup performance & efficiency boost.
-
-Objects [added](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L231) get placed into a bucket.
-
-Hashsets contain buckets, and each bucket contains a list. This means that HashSet is essentially a list of lists.
+# Hashing
+The idea behind hashing is to trade memory for lookup performance & efficiency.
 
 This allows lookup operations to jump to the object much quicker by leveraging the index operator.
+
+This post uses [System.Collections.Generic.HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs) as an example.
 
 # Working with HashTables
 .NET HashTables can be generic, so you can shove your own objects into them. Example:
@@ -42,7 +40,7 @@ public class MyObject1
 }
 ```
 
-[HashSet<T>.Add](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L231) uses various tools to figure out where to place the object in the hashset:
+[HashSet.Add](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L231) uses various tools to figure out where to place the object in the hashset:
 
 * Object.Equals
 * Object.GetHashCode
