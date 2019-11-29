@@ -337,7 +337,7 @@ Stats:
 
 Damn son not even 1%! Visualized as radar chart:
 
-![case 1 bucket distribution](https://gitcdn.link/repo/vitawebsitedesign/blog/master/assets/bucket-distribution-case-1.png)
+![case 1 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-1.png)
 
 This is a very disturbing situation, so lets quickly move onto a slightly-improved version.
 
@@ -370,7 +370,7 @@ All 3 factors give us a much larger range of bucket hash IDs, & this translates 
 | ------------- | ---------------- | ------------------ |
 | 4049          | 8                | 0.1976%            |
 
-![case 2 bucket distribution](https://gitcdn.link/repo/vitawebsitedesign/blog/master/assets/bucket-distribution-case-2.png)
+![case 2 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-2.png)
 
 As you can see, we're getting better but this variant still suffers from the `XOR` producing the same hash code for property value combinations. We need to throw `XOR` out the window immediately.
 
@@ -399,7 +399,7 @@ We just replaced `XOR` with `+`, and damn does this make a difference!
 
 What a kick - woohoo! We are finally getting somewhere!!
 
-![case 3 bucket distribution](https://gitcdn.link/repo/vitawebsitedesign/blog/master/assets/bucket-distribution-case-3.png)
+![case 3 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-3.png)
 
 ## Case 4: multiply with larger values
 ```c#
@@ -425,7 +425,7 @@ By multiplying by larger values (& supressing overflows via `unchecked`), `GetHa
 | ------------- | ---------------- | ------------------ |
 | 4049          | 1950             | 48.1600%           |
 
-![case 4 bucket distribution](https://gitcdn.link/repo/vitawebsitedesign/blog/master/assets/bucket-distribution-case-4.png)
+![case 4 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-4.png)
 	
 Look at that distribution! Hnnnggggg.
 
@@ -488,7 +488,7 @@ will have hashcode of `12345`. And with this implementation we get a nice kick:
 | ------------- | ---------------- | ------------------ |
 | 4049          | 2310             | 56.8288%           |
 
-![case 5 bucket distribution](https://gitcdn.link/repo/vitawebsitedesign/blog/master/assets/bucket-distribution-case-5.png)
+![case 5 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-5.png)
 
 # What if i wanna be lazy and use GetHashCode for my Equals implementations?
 Some developers seem to implement `Object.Equals` & `IEquatable<T>.Equals` by using `Object.GetHashCode`.
