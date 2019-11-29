@@ -331,7 +331,7 @@ And guess what, we are benchmarking efficiency so we care about the worst case. 
 
 Stats:
 | Total buckets | Buckets occupied | % buckets occupied |
-|---------------|------------------|--------------------|
+| ------------- | ---------------- | ------------------ |
 | 4049          | 8                | 0.1976%            |
 
 Damn son not even 1%! Visualized as radar chart:
