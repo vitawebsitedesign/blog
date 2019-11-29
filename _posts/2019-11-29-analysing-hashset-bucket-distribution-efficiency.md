@@ -395,7 +395,7 @@ We just replaced `XOR` with `+`, and damn does this make a difference!
 
 | Total buckets | Buckets occupied | % buckets occupied |
 | ------------- | ---------------- | ------------------ |
-| 4049          | 1950             | 48.1600%           |
+| 4049          | 21               | 0.5186%            |
 
 What a kick - woohoo! We are finally getting somewhere!!
 
@@ -423,7 +423,7 @@ By multiplying by larger values (& supressing overflows via `unchecked`), `GetHa
 
 | Total buckets | Buckets occupied | % buckets occupied |
 | ------------- | ---------------- | ------------------ |
-| 4049          | 2310             | 56.8288%           |
+| 4049          | 1950             | 48.1600%           |
 
 <TODO IMG>
 	
@@ -431,7 +431,66 @@ Look at that distribution! Hnnnggggg.
 
 This variant is the implementation recommended by Jon SKeet on StackOverflow, and is superior to the XOR variant when using HashSets in the worst-case scenario.
 
-# You have been warned
+Use this, honestly its gold. Theres also another great variant Jon posts which he takes from a Java book.
+
+## Case 5: tailored GetHashCode
+Case 4 is great, like, really great.
+
+But if YOU know YOUR exact scenario, and the exact data being put into the HashSet, you have a special opportunity where its possible to write a `GetHashCode` implementation tailored to your specific data to maximize your bucket distribution efficiency.
+
+Lets take our example from before. The data we generate is very specific:
+```c#
+var set = new HashSet<MyObject4>();
+var limit = 5;
+for (var a = 0; a < limit; a++)
+{
+    for (var b = 0; b < limit; b++)
+    {
+        for (var c = 0; c < limit; c++)
+        {
+            for (var d = 0; d < limit; d++)
+            {
+                for (var e = 0; e < limit; e++)
+                {
+                    set.Add(new MyObject4(a, b, c, d, e));
+                }
+            }
+        }
+    }
+}
+```
+We KNOW that each object will have a unique property permutation. With this knowledge, we can craft a better `GetHashCode` for this specific dataset:
+```c#
+public override int GetHashCode()
+{
+    unchecked
+    {
+        var str = $"{A}{B}{C}{D}{E}";
+        return int.Parse(str);
+    }
+}
+```
+For example, the object:
+```c#
+new MyObject
+{
+    A = 1,
+    B = 2,
+    C = 3,
+    D = 4,
+    E = 5
+}
+```
+will have hashcode of `12345`. And with this implementation we get a nice kick:
+
+
+| Total buckets | Buckets occupied | % buckets occupied |
+| ------------- | ---------------- | ------------------ |
+| 4049          | 2310             | 56.8288%           |
+
+<TODO IMG>
+
+# What if i wanna be lazy and use GetHashCode for my Equals implementations?
 Some developers seem to implement `Object.Equals` & `IEquatable<T>.Equals` by using `Object.GetHashCode`.
 
 Good implementations of `GetHashCode` leverage overflow supressing via `unchecked` and large multiplication operations to maximize the range of hash IDs the function can generate.
