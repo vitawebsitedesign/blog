@@ -314,7 +314,8 @@ The reason this is a bad `GetHashCode()` implementation is that different orders
 ```
 11110001
 01010011
-
+```
+```
 10100010
 ```
 
@@ -326,4 +327,106 @@ var c = new MyObject { PropertyA = 3, PropertyB = 1, PropertyC = 2 };
 var d = new MyObject { PropertyA = 2, PropertyB = 1, PropertyC = 3 };
 ```
 
+And guess what, we are benchmarking efficiency so we care about the worst case. And this is the worst case!
+
 <TODO IMG>
+
+This is a very disturbing situation, so lets quickly move onto a slightly-improved version.
+
+## Case 2: unchecked XOR with prime multiplication
+```c#
+public override int GetHashCode()
+{
+    unchecked
+    {
+        const int prime = 23;
+        var hash = (A * prime)
+            ^ (B * prime)
+            ^ (C * prime)
+            ^ (D * prime)
+            ^ (E * prime);
+        return 17 + hash;
+    }
+}
+```
+
+The 3 improvements in this variant are:
+
+* The `unchecked` block, which ensures overflows are suppressed. This means large values "wrap around".
+* Multiplying the class properties. This causes larger numbers.
+* Usage of co-prime numbers. Co-prime numbers means there is a lower chance of the multiplication operations producing the same result for similar property values.
+
+All 3 factors give us a much larger range of bucket hash IDs, & this translates into better bucket distribution:
+
+<TODO IMG>
+
+As you can see, we're getting better but this variant still suffers from the `XOR` producing the same hash code for property value combinations. We need to throw `XOR` out the window immediately.
+
+## Case 3: do SUM instead of XOR
+```c#
+public override int GetHashCode()
+{
+    unchecked
+    {
+        const int prime = 23;
+        var hash = (A * prime)
+            + (B * prime)
+            + (C * prime)
+            + (D * prime)
+            + (E * prime);
+        return 17 + hash;
+    }
+}
+```
+
+We just replaced `XOR` with `+`, and damn does this make a difference!
+
+<TODO IMG>
+
+## Case 4: multiply with larger values
+```c#
+public override int GetHashCode()
+{
+    unchecked
+    {
+        const int prime = 10007;
+
+        var hash = 17;
+        hash = hash * prime + A;
+        hash = hash * prime + B;
+        hash = hash * prime + C;
+        hash = hash * prime + D;
+        hash = hash * prime + E;
+        return hash;
+    }
+}
+```
+By multiplying by larger values (& supressing overflows via `unchecked`), `GetHashCode()` will generate hash IDs within a larger range. Since we are basically benchmarking here, we care about the worst case, and in most realistic scenarios we could have very large HashSets.
+
+<TODO IMG>
+	
+Look at that distribution! Hnnnggggg.
+
+This variant is the implementation recommended by Jon SKeet on StackOverflow, and is superior to the XOR variant when using HashSets in the worst-case scenario.
+
+# You have been warned
+Some developers seem to implement `Object.Equals` & `IEquatable<T>.Equals` by using `Object.GetHashCode`.
+
+Good implementations of `GetHashCode` leverage overflow supressing via `unchecked` and large multiplication operations to maximize the range of hash IDs the function can generate.
+
+This means that 2 objects that may **not** be equal, may have the same hash code.
+
+So if you do this, 2 inequal objects could be marked equal, and youre gonna be in a for a massive headache when trying to debug issues in prod.
+
+As said at the start of this, `Object.Equals` & `IEquatable<T>.Equals` need to focus on correctness, not speed. Leave speed to `Object.GetHashCode()`.
+
+This is because `HashSet` lookups use the hash code to quickly jump to a bucket, and then use `Equals` to compare each object in that bucket. `Equals` is `O(n)` (compared to the hash lookup of roughly `O(1)`), so by definition it is not scalable for large N. So focus on speed for hash code generation. Theres no room for error when it comes to `Equals`.
+
+# Closing notes
+Hashsets give faster lookups at the cost of memory.
+
+Developers may sometimes forget to override `IEquatable<T>.Equals`, `Object.Equals` & `Object.GetHashCode`. Whilst all 3 equality functions appear redundant, they are all necessary to maximizing efficiency when placed inside HashSets.
+
+Once all 3 functions are implemented CORRECTLY, then you need to focus on a good `GetHashCode` implementation for your situation. For the vast majority of cases, using `unchecked` multiplications with large prime numbers (& combining the result of these operations across all class fields/properties) will give "safe" & efficient bucket distributions.
+
+Inefficient bucket distributions essentially lead to more O(n) HashSet operations, which nullifies the whole point of HashSet - super dooper fast lookups.
