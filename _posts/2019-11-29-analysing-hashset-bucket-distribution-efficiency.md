@@ -4,6 +4,8 @@ layout: post
 author: Michael Nguyen
 ---
 
+![bucket distribution overview](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-overview.jpg)
+
 .NET Core has the Set abstract data type, & sets operate around this idea of "buckets".
 
 We will look at `GetHashCode` & `Equals` in detail by:
