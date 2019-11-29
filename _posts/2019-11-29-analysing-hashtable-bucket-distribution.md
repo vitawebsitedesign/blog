@@ -162,16 +162,168 @@ public bool Contains(T item)
   return false;
 }
 ```
+For example, lets take our example class `MyObject`. If we put 2 objects with the same `Val` into a hashset, but different `Id`s, and we make `GetHashSet()` return `Id`, we can have an incorrect `GetHashCode` implementation when we check if a `Val` already exists in the hashset. Hence, the `slots[i].hashCode == hashCode` bit will return false and all is doomed:
+```c#
+public class MyObject2 : IEquatable<MyObject2>
+{
+    public int Id { get; }
+    public int Val { get; }
 
-If you screw up `GetHashCode`, the `slots[i].hashCode == hashCode` bit will return false and all is doomed.
+    public MyObject2(int id, int val)
+    {
+        Id = id;
+        Val = val;
+    }
 
-And if you screw up `Equals`, the `comparer.Equals(slots[i].value, item)` bit will return false and all is doomed (again).
+    public override bool Equals(object obj)
+    {
+        return Equals(obj as MyObject2);
+    }
 
-So make sure both are correct. But if both serve as equality, why are there 2?
+    public bool Equals(MyObject2 other)
+    {
+        if (other == null)
+            return false;
+
+        return Id == other.Id && Val == other.Val;
+    }
+
+    public override int GetHashCode()
+    {
+        return Id;
+    }
+}
+```
+
+This is because even though both objects have the same `Val`, `GetHashCode()` is based on `Id`. The object will be in a different bucket, and calling `Hashset<T>.Contains(some2ndObjectWithSameValue)` will return false.
+
+What about `Equals`? If we want to check if an object with the same `ID` already exists in a hashset, & we make `Equals` based on `Val`, then we will have an incorrect `Equals` implementation. Hence, the `comparer.Equals(slots[i].value, item)` bit will return false and all is doomed (again):
+```c#
+public class MyObject1 : IEquatable<MyObject1>
+{
+    public int Id { get; }
+    public int Val { get; }
+
+    public MyObject1(int id, int val)
+    {
+        Id = id;
+        Val = val;
+    }
+
+    public override bool Equals(object obj)
+    {
+        return Equals(obj as MyObject1);
+    }
+
+    public bool Equals(MyObject1 other)
+    {
+        if (other == null)
+            return false;
+
+        return Val == other.Val;
+    }
+
+    public override int GetHashCode()
+    {
+        return Val;
+    }
+}
+```
+
+For example, if we have a hashset with an object with Id `1`, then `Hashset<T>.Contains(anotherObjectWithDifferentVal)` would return false (even if it had `Id` of 1).
+
+Always make sure both are implemented correctly.
+
+That said, this raises an interesting question. If both functions serve as equality, why are there 2?
 
 ## GetHashCode VS Equals
 A misconception is that both functions should behave like `Equals`.
 
 This is wrong - `GetHashCode` just acts as a bucket ID generator. So make sure GetHashCode is fast, & that your `Equals` implementation prioritizes correctness over speed.
 
-# Limitations
+# Bucket distribution efficiency
+Now that all that is out of way, lets jump into bucket distribution efficiency! This all depends on the implementation we choose for `GetHashCode`.
+
+We will start with the worst implementation, then keep improving it until we get a nice juicy gooey even bucket distribution.
+
+If you want to follow along, the code to generate my sample hashsets is below:
+```c#
+var set = new HashSet<MyObject4>();
+var limit = 5;
+for (var a = 0; a < limit; a++)
+{
+    for (var b = 0; b < limit; b++)
+    {
+        for (var c = 0; c < limit; c++)
+        {
+            for (var d = 0; d < limit; d++)
+            {
+                for (var e = 0; e < limit; e++)
+                {
+                    set.Add(new MyObject4(a, b, c, d, e));
+                }
+            }
+        }
+    }
+}
+```
+
+And we will use the below `Equals` implementation:
+```c#
+public override bool Equals(object obj)
+{
+    return Equals(obj as MyObject4);
+}
+
+public bool Equals(MyObject4 other)
+{
+    if (other == null)
+        return false;
+
+    return A == other.A
+        && B == other.B
+        && C == other.C
+        && D == other.D
+        && E == other.E;
+}
+```
+
+Lets get biz-a.
+
+## Case 1: Basic XOR
+```c#
+public override int GetHashCode()
+{
+    return A ^ B ^ C ^ D ^ E;
+}
+```
+
+This is the rice-and-beans staple of the HashSet world & is often marked as a correct Stackoverflow answer. Before stating how bad this is, i'll need to dive into `XOR`.
+
+The exclusive-or operator (XOR) just smooshes 2 bit sequences together to generate another bit sequence. When only one of the bits is 1, then 1 is generated else 0. E.g.:
+```
+01010011
+11110001
+```
+becomes
+```
+10100010
+```
+
+The reason this is a bad `GetHashCode()` implementation is that different orders still produce the same bit sequence. Flipping the previous example gives us the same result:
+```
+11110001
+01010011
+
+10100010
+```
+
+So when you do a XOR for all the class properties, you get a horrendous distribution for similar property value pairs. E.g.:
+```c#
+var a = new MyObject { PropertyA = 1, PropertyB = 2, PropertyC = 3 };
+var b = new MyObject { PropertyA = 3, PropertyB = 2, PropertyC = 1 };
+var c = new MyObject { PropertyA = 3, PropertyB = 1, PropertyC = 2 };
+var d = new MyObject { PropertyA = 2, PropertyB = 1, PropertyC = 3 };
+```
+
+<TODO IMG>
