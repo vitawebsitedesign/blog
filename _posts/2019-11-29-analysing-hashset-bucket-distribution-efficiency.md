@@ -128,7 +128,7 @@ Lucky us - devs in the old days didnt have this luxury!
 
 We will go over improvements for the above code later on. For now, i wanna gloss over the dangers of incorrect implementations.
 
-# .NET is NOT a unicorn with a crystal ball
+# .NET Core is great, but isn't a unicorn
 .NET Core is smart but if you implement 1 of the 3 functions incorrectly, its not gonna function as expected:
 ```c#
 public bool Contains(T item)
@@ -328,6 +328,13 @@ var d = new MyObject { PropertyA = 2, PropertyB = 1, PropertyC = 3 };
 ```
 
 And guess what, we are benchmarking efficiency so we care about the worst case. And this is the worst case!
+
+Stats:
+| Total buckets | Buckets occupied | % buckets occupied |
+|---------------|------------------|--------------------|
+| 4049          | 8                | 0.1976%            |
+
+Damn son not even 1%! Visualized as radar chart:
 
 <TODO IMG>
 
