@@ -330,6 +330,7 @@ var d = new MyObject { PropertyA = 2, PropertyB = 1, PropertyC = 3 };
 And guess what, we are benchmarking efficiency so we care about the worst case. And this is the worst case!
 
 Stats:
+
 | Total buckets | Buckets occupied | % buckets occupied |
 | ------------- | ---------------- | ------------------ |
 | 4049          | 8                | 0.1976%            |
