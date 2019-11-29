@@ -1,5 +1,5 @@
 ---
-title: Analysing .NET HashSet bucket distribution
+title: Analysing .NET HashSet bucket distribution efficiency
 layout: post
 author: Michael Nguyen
 ---
