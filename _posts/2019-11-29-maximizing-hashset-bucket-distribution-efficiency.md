@@ -1,5 +1,5 @@
 ---
-title: Analysing HashSet bucket distribution efficiency
+title: Maximizing HashSet bucket distribution efficiency
 layout: post
 author: Michael Nguyen
 ---
