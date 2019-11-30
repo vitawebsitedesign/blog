@@ -23,7 +23,7 @@ This allows lookup operations to search sets much quicker by leveraging the inde
 
 This examples below will use [System.Collections.Generic.HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs) as an example set.
 
-# Working with HashTables
+# Working with HashSets
 The HashSet generic collection is often used to store uer-defined objects. E.g.:
 
 ```c#
