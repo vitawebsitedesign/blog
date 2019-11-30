@@ -322,7 +322,7 @@ If we screw up `GetHashCode`, we get this situation. Thankfully, the following s
 # Bucket distribution efficiency
 Now that all that is out of way, lets jump into bucket distribution efficiency! This all depends on the implementation we choose for `GetHashCode`.
 
-We will start with the worst implementations, which can often be [marked](https://stackoverflow.com/a/9828186) as an [accepted](https://stackoverflow.com/a/70375) StackOverflow answer. Then we will keep improving our implementation until we get a nice juicy gooey efficient bucket distribution.
+We will start with the worst implementations, which are often [prominent](https://stackoverflow.com/a/9828186) in [StackOverflow threads](https://stackoverflow.com/a/70375). Then we will keep improving our implementation until we get a nice juicy gooey efficient bucket distribution.
 
 If you want to follow along, the code to generate my sample hashsets is below:
 ```c#
@@ -376,7 +376,7 @@ public override int GetHashCode()
 }
 ```
 
-This is the rice-and-beans staple of the HashSet world & is often marked as a correct Stackoverflow answer. Before stating how bad this is, i'll need to dive into `XOR`.
+This is the rice-and-beans staple of the HashSet world. Before discussing the problems with this, we need to know what `XOR` does.
 
 The exclusive-or operator (XOR) just smooshes 2 bit sequences together to generate another bit sequence. When only one of the bits is 1, then 1 is generated else 0. E.g.:
 ```
