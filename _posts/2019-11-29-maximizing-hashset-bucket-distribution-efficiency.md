@@ -324,7 +324,7 @@ Now that all that is out of way, lets jump into bucket distribution efficiency! 
 
 We will start with the worst implementations, which are often [prominent](https://stackoverflow.com/a/9828186) in [StackOverflow threads](https://stackoverflow.com/a/70375). Then we will keep improving our implementation until we get a nice juicy gooey efficient bucket distribution.
 
-If you want to follow along, the code to generate my sample hashsets is below:
+The below examples use a specific hashset to test bucket distribution, which is generated using:
 ```c#
 var set = new HashSet<MyObject4>();
 var limit = 5;
@@ -346,7 +346,9 @@ for (var a = 0; a < limit; a++)
 }
 ```
 
-And we will use the below `Equals` implementation for all examples:
+This will allow us to test permutations & combinations of hashes.
+
+Additionally, we will use the same `Equals` implementation for the following examples:
 ```c#
 public override bool Equals(object obj)
 {
@@ -378,7 +380,7 @@ public override int GetHashCode()
 
 This is the rice-and-beans staple of the HashSet world. Before discussing the problems with this, we need to know what `XOR` does.
 
-The exclusive-or operator (XOR) just smooshes 2 bit sequences together to generate another bit sequence. When only one of the bits is 1, then 1 is generated else 0. E.g.:
+The [exclusive-or operator](https://hackernoon.com/xor-the-magical-bit-wise-operator-24d3012ed821) (XOR) just smooshes 2 bit sequences together to generate another bit sequence. When only one of the bits is 1, then 1 is generated else 0. E.g.:
 ```
 01010011
 11110001
