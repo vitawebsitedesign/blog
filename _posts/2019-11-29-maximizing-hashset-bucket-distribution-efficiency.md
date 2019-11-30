@@ -576,7 +576,7 @@ will have hashcode of `12345`. And with this new `GetHashCode` implementation we
 
 ![case 5 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-5.png)
 
-A higher bucket efficiency with a slightly different distribution. Not bad, not bad at all... :-)
+A higher bucket efficiency with a more consistent distribution. Not bad, not bad at all. :-)
 
 # Closing notes
 Hashsets give faster lookups at the cost of memory.
