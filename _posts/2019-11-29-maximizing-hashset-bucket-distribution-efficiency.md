@@ -419,9 +419,9 @@ Damn son! Not even 1%! Visualized as radar chart:
 
 ![case 1 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-1.png)
 
-See all that grey? Thats what shame looks like.
+See all that blue? Those lines represent a used bucket. See all that grey? Thats what shame looks like.
 
-This is a very disturbing situation with many unused buckets. I don't wanna look at this anymore, so lets move on.
+This is a very disturbing situation with many unused buckets. I don't wanna look at this picture anymore, so lets move on.
 
 ## Case 2: unchecked XOR with prime multiplication
 ```c#
