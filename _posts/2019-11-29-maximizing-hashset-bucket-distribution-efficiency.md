@@ -6,24 +6,24 @@ author: Michael Nguyen
 
 ![bucket distribution overview](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-overview.jpg)
 
-The .NET Core [Set](https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.iset-1?view=netframework-4.8) abstract data type operates around the idea of "buckets". Bucket distribution is affected by `Object.GetHashCode`, `Object.Equals` & `IEqualityComprarer<T>.Equals`.
+The .NET Core [Set](https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.iset-1?view=netframework-4.8) abstract data type operates around the idea of "buckets". Bucket distribution is affected by `Object.GetHashCode`, which generates a hash code for an object.
 
-This post will look at:
+In short, the hashing mechanism you use affects how objects get distributed into a set's buckets, and this affects lookup efficiency. I feel that this fact isnt given enough emphasis in todays world, so this blog post runs through this.
 
-* Incorrect implementations of these functions that "break" .NET Core's [HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs)
+Explaining bucket distribution efficiency requires understanding on how HashSets work with user-defined objects. So this post will look at:
+
+* The role that hashing plays in sets
+* How to use user-defined objects with [HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs)
+* Incorrect implementations of the various equality functions that "break" .NET Core's `HashSet<T>`
 * Correcting these implementations
 * The bucket distribution efficiency of various implementations recommended by the internet
 
-Before diving into any of this, we need to understand the role that hashing plays in sets.
+# Set hashing
+In the context of sets (& even hash tables), hashing gives devs an option to trade memory for performance & efficiency. This allows lookup operations to search sets much quicker by leveraging the index operator.
 
-# Hashing
-In the context of sets, hashing trades memory for performance & efficiency.
+The code examples that follow use [System.Collections.Generic.HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs) as an example collection, which implements `ISet<T>`.
 
-This allows lookup operations to search sets much quicker by leveraging the index operator.
-
-This examples below will use [System.Collections.Generic.HashSet](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs) as an example set.
-
-# Working with HashSets
+# How are HashSets used?
 The HashSet generic collection is often used to store uer-defined objects. E.g.:
 
 ```c#
@@ -40,16 +40,18 @@ public class MyObject1
 }
 ```
 
-[HashSet.Add](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L231) uses various tools to figure out where to place the object in the hashset:
+[HashSet.Add](https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L231) uses various methods to figure out where to place the object in the hashset. These methods include (& are not limited to):
 
-* Object.Equals
-* Object.GetHashCode
-* IEquatable<T>.Equals
+* `Object.Equals`
+* `Object.GetHashCode`
+* `IEquatable<T>.Equals`
 
-User-defined objects need to implement the above functions to maximize lookup efficiency in `HashSet<T>`.
+User-defined objects need to implement the above 3 functions to maximize lookup efficiency in `HashSet<T>`. Sometimes i see StackOverflow posts missing 1 of these 3, which is a huge kick in the nuts. If you are using modern .NET & C# 5+, you should always implement all 3 to get the most bang for your buck.
+
+Lets run through the first 2 now!
 
 ## Object.Equals & Object.GetHashCode
-Both of these methods are implemented in [Object](https://source.dot.net/#System.Private.CoreLib/Object.cs,d9262ceecc1719ab), & are used to check equality.
+Both of these methods are implemented in [Object](https://source.dot.net/#System.Private.CoreLib/Object.cs,d9262ceecc1719ab), & are used to check equality (i'll come back to this fact later).
 
 When making our own classes, we should override both of these **non-generic functions**:
 ```c#
@@ -65,18 +67,16 @@ public override int GetHashCode()
 }
 ```
 
-`Equals` is for normal equality stuff, whilst `GetHashCode` is used in sets to "jump" to the correct nested list (i.e.: bucket).
+`Equals` is for normal equality stuff, whilst `GetHashCode` is just used in sets to "jump" to the correct bucket (i.e.: "nested list").
 
-You may now be asking what the difference between `Object.Equals` & `IEquatable<T>.Equals` is.
+With 2/3 functions implemented, lets finish the job by implementing `IEquatable<T>.Equals`.
 
 ## IEquatable<T>.Equals
-We have gone over 2 **non-generic** functions used for equality, however modern .NET now allows us to use generic functions.
+`Object.Equals` is a non-generic function.
 
-With this luxury, We should then also implement a generic version of `Object.Equals` too, because:
-* it allows .NET to internally find our equal comparison logic more efficiently
-* objects implementing an interface can often be substitued with similar objects implementing that interface (for functions accepting that interface)
+But with modern .NET & C# 5+, we can use generic functions.
 
-This **generic** "version" is `IEquatable<T>.Equals`:
+With this luxury, We should then also implement the generic version of `Object.Equals` too, which is `IEquatable<T>.Equals`.
 ```c#
 public class MyObject1 : IEquatable<MyObject1>
 {
@@ -89,9 +89,17 @@ public class MyObject1 : IEquatable<MyObject1>
 }
 ```
 
-Now you know the 3 equality functions required to maximize lookup efficiency.
+The benefits are:
+* it allows .NET to internally find our equal comparison logic more efficiently
+* objects implementing an interface can often be substitued with similar objects implementing that interface (for functions accepting that interface). This tranlates into more malleable code.
 
-So far i've only given definitions, so now i will identify an example implementation detail of all 3.
+So far, we've run through the definitions for:
+* `Object.Equals`
+* `Object.GetHashCode`
+* `IEquatable<T>.Equals`
+
+
+Since i've only given definitions so far, now is the time for their implementation details.
 
 ## Putting it all together
 ```c#
@@ -128,8 +136,10 @@ public class MyObject1 : IEquatable<MyObject1>
 
 The above code *can* work, but has many problems.
 
-# Consequences of incorrect implementations
-.NET Core is smart but if you implement 1 of these 3 equality functions incorrectly, .NET Core won't function as expected. For example, lets check out the `HashSet<T>.Contains` implementation:
+# Consequences of incorrect overrides
+.NET Core is smart but if you implement `Object.Equals` or `Object.GetHashCode` incorrectly, .NET Core won't function as expected. The developers give you the power to provide your own implementation details, but with great power comes great responsibility.
+
+For example, lets check out the `HashSet<T>.Contains` implementation:
 ```c#
 public bool Contains(T item)
 {
@@ -162,19 +172,65 @@ public bool Contains(T item)
   return false;
 }
 ```
-Lets take our example class `MyObject`. If we put 2 objects with the same `Val` into a hashset, but with different `Id`s, and we make `GetHashSet()` return `Id`, we can have an incorrect `GetHashCode` implementation when we check if a `Val` already exists in the hashset:
 
+## Incorrectly implementing Object.GetHashCode
+Now lets take our example class `MyObject`. Let's say we add a `Val` to a hashset:
+```c#
+var set = new HashSet<MyObject>;
+
+var obj1 = new MyObject(Id: 1, Val: 1);
+set.Add(obj1);
+```
+
+Sets only contain Unique values. So if we try to add another object with the same `Val`:
+```c#
+var obj2 = new MyObject(Id: 2, Val: 1);
+set.Contains(obj2);
+```
+
+It can still be added if we make `GetHashCode` return `Id`:
 ```c#
 public class MyObject2 : IEquatable<MyObject2>
 {
     public int Id { get; }
     public int Val { get; }
 
-    public MyObject2(int id, int val)
+    ...
+
+    public override int GetHashCode()
     {
-        Id = id;
-        Val = val;
+        return Id;
     }
+}
+```
+
+Because if we look at the .NET source, the hash code of the 1st object is 1, and the 2nd object hash is 2. So .NET will search for bucket 2 and see that nothing exists in that nested list and will thus return false:
+```c#
+int hashCode = item == null ? 0 : InternalGetHashCode(comparer.GetHashCode(item));
+// see note at "HashSet" level describing why "- 1" appears in for loop
+for (int i = buckets[hashCode % buckets.Length] - 1; i >= 0; i = slots[i].next)
+{
+	if (slots[i].hashCode == hashCode && comparer.Equals(slots[i].value, item))
+	{
+		return true;
+	}
+	...
+}
+```
+
+Specifically, the `slots[i].hashCode == hashCode` bit will return false and this makes `HashSet<T>.Contains` return an unexpected result.
+
+By incorrectly implementing (or not updating the method after altering our user-defined class), we've just caused a hard-to-detect bug and made `HashSet<T>.Add` a more leaky abstraction.
+
+## Incorrectly implementing Object.Equals/IEquatable.Equals
+Lets say we make implement `Equals` to return `Id` (assuming we use the ID to uniquely identify an instance):
+```c#
+public class MyObject2 : IEquatable<MyObject2>
+{
+    public int Id { get; }
+    public int Val { get; }
+
+    ...
 
     public override bool Equals(object obj)
     {
@@ -186,44 +242,7 @@ public class MyObject2 : IEquatable<MyObject2>
         if (other == null)
             return false;
 
-        return Id == other.Id && Val == other.Val;
-    }
-
-    public override int GetHashCode()
-    {
-        return Id;
-    }
-}
-```
-
-Hence, the `slots[i].hashCode == hashCode` bit will return false and `HashSet<T>.Contains` will return an unexpected result.
-
-This is because even though both objects have the same `Val`, `GetHashCode()` is based on `Id`. The object will be in a different bucket, and calling `Hashset<T>.Contains(some2ndObjectWithSameValue)` will return false.
-
-What about `Equals`? If we want to check if an object with the same `ID` already exists in a hashset, & we make `Equals` based on `Val`, then we will have an incorrect `Equals` implementation. Hence, the `comparer.Equals(slots[i].value, item)` bit will return false and all is doomed:
-```c#
-public class MyObject1 : IEquatable<MyObject1>
-{
-    public int Id { get; }
-    public int Val { get; }
-
-    public MyObject1(int id, int val)
-    {
-        Id = id;
-        Val = val;
-    }
-
-    public override bool Equals(object obj)
-    {
-        return Equals(obj as MyObject1);
-    }
-
-    public bool Equals(MyObject1 other)
-    {
-        if (other == null)
-            return false;
-
-        return Val == other.Val;
+        return Id == other.Id;
     }
 
     public override int GetHashCode()
@@ -233,21 +252,79 @@ public class MyObject1 : IEquatable<MyObject1>
 }
 ```
 
-For example, if we have a hashset with an object with Id `1`, then `Hashset<T>.Contains(anotherObjectWithDifferentVal)` would return false (even if it had `Id` of 1).
+Then we add 2 objects with different ID's into the same `HashSet<T>` bucket:
+```c#
+var set = new HashSet<MyObject>;
 
-Always make sure both are implemented correctly.
+var obj1 = new MyObject(Id: 1, Val: 1);
+set.Add(obj1);
 
-That said, this raises an interesting question. If both functions serve as equality, why are there 2?
+var obj2 = new MyObject(Id: 2, Val: 1);
+set.Contains(obj2);
+```
 
-## GetHashCode VS Equals
-A misconception is that both functions should behave like `Equals`.
+The `Contains` call will return false, because even though theyre now in the same bucket (`Val`), they have different `Id`. This can cause all sorts of problems, mainly by "breaking" .NET Core's implementation of `HashSet<T>.Contains`.
 
-This is wrong - `GetHashCode` just acts as a bucket ID generator. So make sure GetHashCode is fast, & that your `Equals` implementation prioritizes correctness over speed.
+Specifically, the `comparer.Equals(slots[i].value, item)` bit in .NET Core will return false.
+
+## What have we learned?
+### Lesson 1: An Equals implementation with 99.9% correctness is not enough!
+If you screw up `Equals`, even if its only 99.9% correct (e.g.: you check all class properties/fields except 1), you'll cause a massive problem down the line. A colleague is gonna hit you on the back of the head.
+
+Look - `GetHashCode` just acts as a bucket ID generator. Theres nothing magical about it. So make sure GetHashCode is fast, & that your `Equals` implementation prioritizes correctness over speed.
+
+Let me make this clear - use `GetHashCode` to generate an int based on ALL fields/properties, & compare all fields/properties in `Equals` using the `==` sign.
+
+### Lesson 2: never base GetHashCode on your Equals implementation
+Some developers seem to implement `Object.Equals` & `IEquatable<T>.Equals` by using `Object.GetHashCode`. E.g.:
+```c#
+public override bool Equals(object obj)
+{
+    return Equals(obj as MyObject);
+}
+
+public bool Equals(MyObject other)
+{
+    if (other == null)
+        return false;
+
+    return GetHashCode() == other.GetHashCode();
+}
+
+public override int GetHashCode()
+{
+    ...
+}
+```
+
+This is a huge problem. Good implementations of `GetHashCode` leverage overflow supressing via `unchecked` and large multiplication operations to maximize the range of hash IDs the function can generate.
+
+This means that 2 objects that may **not** be equal, may have the same hash code. What im saying is this:
+```c#
+var hash1 = int.MaxValue;
+var hash2 = int.MinValue;
+const bool isEqual = hash1 == hash2;
+```
+
+So when you base Equals on GetHashCode, 2 **equal** objects could be placed in different buckets, then `HashSet.Contains` will return false. Or you could have 2 **INequal** objects that get put into the same bucket, & get detected as equalvalent. Youre gonna be in a for a massive headache when trying to debug issues in prod.
+
+If you ever do this, just book a vacation in advance because your gonna need it.
+
+As said before, `Object.Equals` & `IEquatable<T>.Equals` need to have 100% correctness - never EVER sacrifice even 0.00001% correctness for a sligtly faster math operation. Leave speed to `Object.GetHashCode()`.
+
+### Lesson 3: inefficiency bucket distribution
+What happens if you have 1000 buckets, but 3000 objects just put into just 3 buckets? This leaves 997 buckets unused.
+
+`HashSet` lookups use the hash code to quickly jump to a bucket, and then use `Equals` to compare each object in that bucket sequentually. Since `Equals` is `O(n)` (compared to the hash lookup of roughly `O(1)`),  by definition, it is not scalable for large N.
+
+If we screw up `GetHashCode`, we get this situation. Thankfully, the following sections will help you prevent this.
 
 # Bucket distribution efficiency
 Now that all that is out of way, lets jump into bucket distribution efficiency! This all depends on the implementation we choose for `GetHashCode`.
 
-We will start with the worst implementation, then keep improving it until we get a nice juicy gooey even bucket distribution.
+We will start with the worst implementation, which can be marked as an accepted answer in StackOverflow.
+
+Then we will keep improving it until we get a nice juicy gooey efficient bucket distribution.
 
 If you want to follow along, the code to generate my sample hashsets is below:
 ```c#
@@ -271,7 +348,7 @@ for (var a = 0; a < limit; a++)
 }
 ```
 
-And we will use the below `Equals` implementation:
+And we will use the below `Equals` implementation for all examples:
 ```c#
 public override bool Equals(object obj)
 {
@@ -492,19 +569,6 @@ will have hashcode of `12345`. And with this implementation we get a nice kick:
 | 4049          | 2310             | 56.8288%           |
 
 ![case 5 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-5.png)
-
-# What if i wanna be lazy and use GetHashCode for my Equals implementations?
-Some developers seem to implement `Object.Equals` & `IEquatable<T>.Equals` by using `Object.GetHashCode`.
-
-Good implementations of `GetHashCode` leverage overflow supressing via `unchecked` and large multiplication operations to maximize the range of hash IDs the function can generate.
-
-This means that 2 objects that may **not** be equal, may have the same hash code.
-
-So if you do this, 2 inequal objects could be marked equal, and youre gonna be in a for a massive headache when trying to debug issues in prod.
-
-As said at the start of this, `Object.Equals` & `IEquatable<T>.Equals` need to focus on correctness, not speed. Leave speed to `Object.GetHashCode()`.
-
-This is because `HashSet` lookups use the hash code to quickly jump to a bucket, and then use `Equals` to compare each object in that bucket. `Equals` is `O(n)` (compared to the hash lookup of roughly `O(1)`), so by definition it is not scalable for large N. So focus on speed for hash code generation. Theres no room for error when it comes to `Equals`.
 
 # Closing notes
 Hashsets give faster lookups at the cost of memory.
