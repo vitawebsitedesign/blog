@@ -415,11 +415,13 @@ Stats:
 | ------------- | ---------------- | ------------------ |
 | 4049          | 8                | 0.1976%            |
 
-Damn son not even 1%! Visualized as radar chart:
+Damn son! Not even 1%! Visualized as radar chart:
 
 ![case 1 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-1.png)
 
-This is a very disturbing situation, so lets quickly move onto a slightly-improved version.
+See all that grey? Thats what shame looks like.
+
+This is a very disturbing situation with many unused buckets. I don't wanna look at this anymore, so lets move on.
 
 ## Case 2: unchecked XOR with prime multiplication
 ```c#
@@ -452,7 +454,9 @@ All 3 factors give us a much larger range of bucket hash IDs, & this translates 
 
 ![case 2 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-2.png)
 
-As you can see, we're getting better but this variant still suffers from the `XOR` producing the same hash code for property value combinations. We need to throw `XOR` out the window immediately.
+As you can see, this is getting us the SAME result as case 1, but these 3 improvements form the foundation for building an optimum `Object.GetHashCode` implementation.
+
+We are still sufferring from `XOR` producing the same hash code for property value combinations. We need to throw `XOR` out the window immediately.
 
 ## Case 3: do SUM instead of XOR
 ```c#
@@ -471,15 +475,17 @@ public override int GetHashCode()
 }
 ```
 
-We just replaced `XOR` with `+`, and damn does this make a difference!
+We only replaced `XOR` with `+`, but look at the difference!
 
 | Total buckets | Buckets occupied | % buckets occupied |
 | ------------- | ---------------- | ------------------ |
 | 4049          | 21               | 0.5186%            |
 
-What a kick - woohoo! We are finally getting somewhere!!
+What a kick - woohoo! A 0.3% improvement. We are finally getting somewhere!!
 
 ![case 3 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-3.png)
+
+Now we will leverage the foundations from case #2 & #3 to kick it up a notch!
 
 ## Case 4: multiply with larger values
 ```c#
@@ -511,10 +517,10 @@ Look at that distribution! Hnnnggggg.
 
 This variant is the implementation recommended by Jon SKeet on StackOverflow, and is superior to the XOR variant when using HashSets in the worst-case scenario.
 
-Use this, honestly its gold. Theres also another great variant Jon posts which he takes from a Java book.
+Use this, honestly its gold. GOLD I SAY! Theres also another great variant Jon posts which he takes from a Java book.
 
 ## Case 5: tailored GetHashCode
-Case 4 is great, like, really great.
+Case 4 is great (like, really great).
 
 But if YOU know YOUR exact scenario, and the exact data being put into the HashSet, you have a special opportunity where its possible to write a `GetHashCode` implementation tailored to your specific data to maximize your bucket distribution efficiency.
 
@@ -539,7 +545,7 @@ for (var a = 0; a < limit; a++)
     }
 }
 ```
-We KNOW that each object will have a unique property permutation. With this knowledge, we can craft a better `GetHashCode` for this specific dataset:
+We KNOW that each object will have a [unique property permutation](https://en.wikipedia.org/wiki/Permutation). With this knowledge, we can craft an even better `GetHashCode` for our specific dataset:
 ```c#
 public override int GetHashCode()
 {
@@ -561,7 +567,7 @@ new MyObject
     E = 5
 }
 ```
-will have hashcode of `12345`. And with this implementation we get a nice kick:
+will have hashcode of `12345`. And with this new `GetHashCode` implementation we get a nice kick:
 
 
 | Total buckets | Buckets occupied | % buckets occupied |
@@ -570,11 +576,13 @@ will have hashcode of `12345`. And with this implementation we get a nice kick:
 
 ![case 5 bucket distribution](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-5.png)
 
+A higher bucket efficiency with a slightly different distribution. Not bad, not bad at all... :-)
+
 # Closing notes
 Hashsets give faster lookups at the cost of memory.
 
-Developers may sometimes forget to override `IEquatable<T>.Equals`, `Object.Equals` & `Object.GetHashCode`. Whilst all 3 equality functions appear redundant, they are all necessary to maximizing efficiency when placed inside HashSets.
+Developers may sometimes forget to override `IEquatable<T>.Equals`, `Object.Equals` & `Object.GetHashCode`. Whilst all 3 equality functions appear redundant, they are all necessary to maximizing efficiency when placed inside HashSets. This is due to the nature & evolution of the .NET framework.
 
-Once all 3 functions are implemented CORRECTLY, then you need to focus on a good `GetHashCode` implementation for your situation. For the vast majority of cases, using `unchecked` multiplications with large prime numbers (& combining the result of these operations across all class fields/properties) will give "safe" & efficient bucket distributions.
+You need to focus on a good `GetHashCode` implementation for your data situation. For the vast majority of cases, using `unchecked` multiplications with large prime numbers (& combining the result of these operations across all class fields/properties) will give efficient bucket distributions.
 
-Inefficient bucket distributions essentially lead to more `O(n)` HashSet operations, which nullifies the whole point of HashSet - super dooper fast lookups.
+Inefficient bucket distributions essentially lead to more `O(n)` HashSet operations, which nullifies the whole point of HashSet - super dooper fast lookups. This means that the beauty of HashSets can only be utilized through efficient bucket distributions.
