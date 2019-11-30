@@ -322,9 +322,11 @@ If we screw up `GetHashCode`, we get this situation. Thankfully, the following s
 # Bucket distribution efficiency
 Now that all that is out of way, lets jump into bucket distribution efficiency! This all depends on the implementation we choose for `GetHashCode`.
 
-We will start with the worst implementation, which can be marked as an accepted answer in StackOverflow.
+We will start with the worst implementations (which can often be marked as an accepted StackOverflow answer):
+[https://stackoverflow.com/a/9828186](https://stackoverflow.com/a/9828186)
+[https://stackoverflow.com/a/70375](https://stackoverflow.com/a/70375)
 
-Then we will keep improving it until we get a nice juicy gooey efficient bucket distribution.
+Then we will keep improving our implementation until we get a nice juicy gooey efficient bucket distribution.
 
 If you want to follow along, the code to generate my sample hashsets is below:
 ```c#
