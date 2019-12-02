@@ -6,9 +6,9 @@ author: Michael Nguyen
 
 ![bucket distribution overview](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-overview.jpg)
 
-The .NET [Set](https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.iset-1?view=netframework-4.8) abstract data type operates around the idea of "buckets". Bucket distribution is affected by `Object.GetHashCode`, which generates a hash code for an object.
+The .NET HashSet operates around the idea of "buckets". The distribution of these buckets is affected by `Object.GetHashCode`, which generates hash codes for items.
 
-In short, the hashing mechanism you use affects how objects get distributed into a set's buckets, and this affects lookup efficiency. I feel that this fact isnt given enough emphasis in todays world, so this blog post runs through this.
+In short, the hashing mechanism you use affects how objects get distributed into a hashset's buckets, and this affects lookup efficiency. I feel that this fact isnt given enough emphasis in todays world, so this blog post runs through this.
 
 Explaining bucket distribution efficiency requires an understanding of how HashSets work with user-defined objects. So this post will look at:
 
