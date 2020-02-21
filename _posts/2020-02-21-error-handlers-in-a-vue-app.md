@@ -15,7 +15,7 @@ This post summarizes these.
 
 # Vue.config.errorHandler
 Covers vue & (now) promise errors. Think of:
-* Vue created/mounted errors-
+* Vue created/mounted errors
 * Thrown objects in promises
 
 ```javascript
@@ -40,7 +40,7 @@ export default class MyComponent extends Vue {
 ```
 
 # Window.addEventListener
-This function can help us covers *EXPLICIT* promise rejections. The event name for those events is "unhandledrejection".
+This function can help us cover *EXPLICIT* promise rejections. The event name for these kinda events is "unhandledrejection".
 
 The below example is async/await (which is what you'll probably be using these days):
 
@@ -73,14 +73,16 @@ export default class MyComponent extends Vue {
 }
 ```
 
+If you're using async/await with this error handler, you wont need to wrap `awaits` like `await doSomething()` in try-catch blocks anymore. Neat!
+
 # Window.onerror
-Covers non-Vue non-promise javascript stuff. Think of vanilla JavaScript console errors (e.g.: syntax errors, errors in non-Vue lifecycle hooks):
+Covers non-Vue non-promise javascript stuff. Think of vanilla JavaScript console errors (e.g.: syntax errors, errors from non-Vue lifecycle hooks):
 
 ```javascript
 main.ts:
 ...
 window.onerror = function(msg, url, line, col, error) {
-  // "msg" can be an Error or string
+  // Note: "msg" can be an Error or string
   let err: Error | null = null;
   if (msg instanceof Error) {
     err = msg;
@@ -98,23 +100,25 @@ MyComponent.vue:
 <template>
 	<div @click="x" />
 </template>
-import { Component, Vue } from 'vue-property-decorator';
-@Component
-export default class MyComponent extends Vue {
-	x() {
-		setTimeout(() => {	// <-- !
-			throw new Error('x');
-		}, 1);	
+<script>
+	import { Component, Vue } from 'vue-property-decorator';
+	@Component
+	export default class MyComponent extends Vue {
+		x() {
+			setTimeout(() => {	// <-- !
+				throw new Error('x');
+			}, 1);	
+		}
 	}
-}
+</script>
 ```
 
-Once our component friend above renders, all bets are off.
+Once our component friend renders, all bets are off.
 
 So you click the `<div/>` after Vue's render stage, and the vanilla javascript error handler will be needed to catch it.
 
 # Summary
-Shove these 3 in your app as early as possible, & before instantiate the Vue instance w/ `new Vue`:
+Shove these 3 in your Vue app as early as possible, & before instantiating your Vue instance w/ `new Vue(...)`:
 ```javascript
 main.ts:
 import Vue from 'vue';
@@ -130,7 +134,6 @@ window.addEventListener('unhandledrejection', function(event) {
 });
 
 window.onerror = function(msg, url, line, col, error) {
-  // "msg" can be an Error or string
   let err: Error | null = null;
   if (msg instanceof Error) {
     err = msg;
@@ -147,4 +150,4 @@ new Vue(...).$mount(...);
 
 # Closing notes
 * The primary difference between `Error` and `string` is that `Error` has a nice juicy stack trace. So you wanna be throwing `Error` like in the above examples.
-* Vue's error handling responsibility is all about **rendering**. Outside of that, all bets are off. Thats why you need **3** error handlers, even though they look similar.
+* Vue's error handling responsibility covers the **rendering** phase of stuff. Outside of that, all bets are off. Thats why you need **3** error handlers, even though there's some overlap (they even look & behave similarly too).
