@@ -4,8 +4,6 @@ layout: post
 author: Michael Nguyen
 ---
 
-![bucket distribution overview](https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-overview.jpg)
-
 The .NET HashSet operates around the idea of "buckets". The distribution of these buckets is affected by `Object.GetHashCode`, which generates hash codes for items.
 
 In short, the hashing mechanism you use affects how objects get distributed into a hashset's buckets, and this affects lookup efficiency. I feel that this fact isnt given enough emphasis in todays world, so this blog post runs through this.
