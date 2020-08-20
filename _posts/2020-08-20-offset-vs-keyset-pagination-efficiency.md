@@ -133,12 +133,12 @@ For Azure cosmos queries, Microsoft gives consumers the table rows & a “specia
 These “special strings”, or **continuation tokens**, make developer life easier. Hey, thats us!
 
 # Conclusion
-Pagination method | I/O efficiency | Memory efficiency | Network efficiency | When to use
-|--- |--- |--- |--- |---
-Offset pagination (database layer) | Bad | Good | Good | Need to write ANSI SQL
-Offset pagination (server side) | Bad | Good (if yielded), bad otherwise | Good | Don’t need ANSI SQL & need scalability without high development cost
-Offset pagination (client side) | Good | Bad | Good (don’t need extra API calls for subsequent pages) | Little/no memory & network constraints, no bottleneck with front-end dev resources, and need product scalability with fast backend releases
-Keyset pagination (database layer) | Good | Good | Good | Always use this over offset pagination if supported
-Keyset pagination (server side) | Good | Bad | Good | DB bottlenecking, or dont want to additional index on table exposed to significantly more writes than reads
-Keyset pagination (client side) | Good | Good (if client has no memory constraint), bad otherwise | Good | Users use pagination frequently & deeply on your product, and you want to offload work onto client devices
-:star: Continuation token | Good | Good | Good | Always use this over keyset pagination if supported (lower code complexity & development cost)
+| Pagination method | I/O efficiency | Memory efficiency | Network efficiency | When to use |
+| ------------- | ---------------- | ------------------ |
+| Offset pagination (database layer) | Bad | Good | Good | Need to write ANSI SQL |
+| Offset pagination (server side) | Bad | Good (if yielded), bad otherwise | Good | Don’t need ANSI SQL & need scalability without high development cost |
+| Offset pagination (client side) | Good | Bad | Good (don’t need extra API calls for subsequent pages) | Little/no memory & network constraints, no bottleneck with front-end dev resources, and need product scalability with fast backend releases |
+| Keyset pagination (database layer) | Good | Good | Good | Always use this over offset pagination if supported |
+| Keyset pagination (server side) | Good | Bad | Good | DB bottlenecking, or dont want to additional index on table exposed to significantly more writes than reads |
+| Keyset pagination (client side) | Good | Good (if client has no memory constraint), bad otherwise | Good | Users use pagination frequently & deeply on your product, and you want to offload work onto client devices |
+| :star: Continuation token | Good | Good | Good | Always use this over keyset pagination if supported (lower code complexity & development cost) |
