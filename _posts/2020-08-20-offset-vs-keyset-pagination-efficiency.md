@@ -134,7 +134,7 @@ These “special strings”, or **continuation tokens**, make developer life eas
 
 # Conclusion
 Pagination method | I/O efficiency | Memory efficiency | Network efficiency | When to use
---- | --- | --- | --- | ---
+|--- |--- |--- |--- |---
 Offset pagination (database layer) | Bad | Good | Good | Need to write ANSI SQL
 Offset pagination (server side) | Bad | Good (if yielded), bad otherwise | Good | Don’t need ANSI SQL & need scalability without high development cost
 Offset pagination (client side) | Good | Bad | Good (don’t need extra API calls for subsequent pages) | Little/no memory & network constraints, no bottleneck with front-end dev resources, and need product scalability with fast backend releases
