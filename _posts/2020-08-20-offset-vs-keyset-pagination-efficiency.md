@@ -133,6 +133,7 @@ For Azure cosmos queries, Microsoft gives consumers the table rows & a “specia
 These “special strings”, or **continuation tokens**, make developer life easier. Hey, thats us!
 
 # Conclusion
+
 | Pagination method | I/O efficiency | Memory efficiency | Network efficiency | When to use |
 | ------------- | ---------------- | ------------------ |
 | Offset pagination (database layer) | Bad | Good | Good | Need to write ANSI SQL |
