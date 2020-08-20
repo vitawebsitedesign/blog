@@ -8,7 +8,7 @@ A common pagination method is to use an offset-like operator (or equivalent, suc
 
 ```sql
 DECLARE @pageIndex INT = 0;
-DECLARE @pageSize = 10;
+DECLARE @pageSize INT = 10;
 
 SELECT *
 FROM dbo.MyTable
