@@ -141,4 +141,4 @@ These “special strings”, or **continuation tokens**, make developer life eas
 | Keyset pagination (database layer) | Good | Good | Good | Always use this over offset pagination if supported |
 | Keyset pagination (server side) | Good | Bad | Good | DB bottlenecking, or dont want to additional index on table exposed to significantly more writes than reads |
 | Keyset pagination (client side) | Good | Good (if client has no memory constraint), bad otherwise | Good | Users use pagination frequently & deeply on your product, and you want to offload work onto client devices |
-| :star: Continuation token | Good | Good | Good | Always use this over keyset pagination if supported (lower code complexity & development cost) |
+| Continuation token | Good | Good | Good | Always use this over keyset pagination if supported (lower code complexity & development cost) |
