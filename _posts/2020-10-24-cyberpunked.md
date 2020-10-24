@@ -1,5 +1,5 @@
 ---
-title: Investors just got cyberpunked
+title: Cyberpunked
 layout: post
 author: Michael Nguyen
 ---
