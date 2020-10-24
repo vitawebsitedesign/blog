@@ -1,5 +1,5 @@
 ---
-title: Cyberpunked
+title: Cyberpunk'd
 layout: post
 author: Michael Nguyen
 ---
