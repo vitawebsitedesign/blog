@@ -46,7 +46,7 @@ With so much having been invested into this product, it is likely to have disapp
 
 # The situation is complex
 ## Peopleware
-Their marketing department (like all employees) want to *look good*, so they give these grand ideas of Cyberpunk being GTA 6, then they can get massive raises & keep their jobs.
+Their marketing department (like all employees) want to *look good*, so they give these grand ideas of Cyberpunk being GTA 6, then they can get praise, honour, raises, self-esteem, job security, promotions. Who wouldn't?
 
 [![gta 5 characters](https://i.imgur.com/c0Ej78e.jpeg "gta 5 characters")](https://i.imgur.com/c0Ej78e.jpeg)
 [![cyberpunk lifepaths](https://i.imgur.com/rxqnuz3.jpeg "cyberpunk lifepaths")](https://i.imgur.com/rxqnuz3.jpeg)
@@ -55,7 +55,10 @@ Their marketing department (like all employees) want to *look good*, so they giv
 And managers will approve for the same reasons. So even though they probably knew how dumb the start of their marketing campaign was, they prioritise themselves over investors. Which is perfectly fine & justified, its just that **it comes with a consequence of investors de-risking their portfolio by unwinding their CDR position**.
 
 ## Assumptions met reality
-I think investors assumed that CD Projekt Red (being as successful & investor-focused as they are) would've been smart enough to not screw up the target audience in their expensive marketing campaign. And they unfortunately the investors got cyberpunked.
+I think investors assumed that CD Projekt Red (being as successful & investor-focused as they are) would've been smart enough to not screw up the target audience in their expensive marketing campaign. And they, the investors, unfortunately got cyberpunked.
+
+## Trend reversals
+Technicals also play a part as well, but not as much as the fundamentals. "Modern" trading approaches have thrown out valuations for price action. So if the price starts behaving weird & they will act accordingly, regardless of the fundamentals. This is especially true for unpredictable markets, such as what we are currently experiencing leading up to the USA election.
 
 # And here we are
 3 weeks away from release. Never thought I’d see the day of WSE CDR being below 375 PLN. It will probably jump coming into November, then be dumped again following refunds & negative reviews. I'd be lying if I said I knew what the stock price action would be after that.
