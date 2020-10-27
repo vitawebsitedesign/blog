@@ -22,7 +22,7 @@ And then management comes around. They simply won’t allow “playtime” to fi
 
 How do we manage technical debt when 0 time is dedicated to it?
 
-# Solutions
+# "Sigh, will this cost me my arm or leg today?"
 ## Solution 1: just refactor more!…. right?
 An often approach is to trade off [sprint velocity](https://www.scruminc.com/velocity/) for non-visible technical debt reduction. This is usually either approved by the managers (e.g.: the product owner may approve because it's a smaller overhead than rewriting entire codebases), or not approved by managers. If it's **NOT** approved, good software engineers often take the initiative themselves, knowing that even though it's not visible by management, technical debt kills.
 
