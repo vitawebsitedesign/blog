@@ -53,7 +53,7 @@ But test coverage doesn't ***have*** to be 100%. In fact, for very large & compl
 
 It’s good to *strive* to be perfect, just don’t *expect* perfect. Otherwise you'll overcommit to a practice, lose situational context & start inefficiently investing time & money.
 
-# Eh, not a silver bullet. but bronze bullets are still good for most business products anyways.
+# Eh, not a silver bullet.... BUT, bronze bullets are still good for most business products anyways.
 Software is complicated & involves many scenarios. Use that brain & apply the right tool for the right job. TDD is great, just be sure that you're **winning** from it, not *losing* to it.
 
 In the end of the day, the highest priority is business success, not the egotistic feeling of being a "good software engineer". Theres more to being a good software engineer than smashing out code. In fact, applying solid practices that maximize business success is often more valuable that being a code monkey.
