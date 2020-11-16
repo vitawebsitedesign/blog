@@ -1,5 +1,5 @@
 ---
-title: TDD aint a silver bullet: its a bronze bullet
+title: TDD aint a silver bullet - its a bronze bullet
 layout: post
 author: Michael Nguyen
 ---
