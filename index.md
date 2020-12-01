@@ -4,6 +4,10 @@ layout: default
 ---
 
 <section>
+	<h1>Duality of man</h1>
+	<h4>Blog</h4>
+</section>
+<section>
 	<small>
 		<div>All posts:</div>
 		<ul>
