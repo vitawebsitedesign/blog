@@ -5,7 +5,7 @@ layout: default
 
 <section>
 	<h1>Untold stories</h1>
-	<h4>as a Software Engineer</h4>
+	<h4>Software Engineer</h4>
 </section>
 <section>
 	<small>
