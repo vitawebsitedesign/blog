@@ -4,8 +4,8 @@ layout: default
 ---
 
 <section>
-	<h1>Duality of man</h1>
-	<h4>Blog</h4>
+	<h1>Untold stories</h1>
+	<h4>as a Software Engineer</h4>
 </section>
 <section>
 	<small>
