@@ -1,5 +1,5 @@
 ---
-title: Tasty concurrency control with SQL Server locks
+title: Situational concurrency control with SQL Server locks
 layout: post
 author: Michael Nguyen
 ---
