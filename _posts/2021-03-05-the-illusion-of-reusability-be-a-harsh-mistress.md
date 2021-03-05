@@ -212,6 +212,6 @@ If you ever hear this, keep in mind that its important to think long & hard on d
 An approach of *intentionally* pushing design flaws to the side because "it makes my life easier" isn't an acceptable approach. Companies rely on developers to be responsible & to act in the best interest of the company...
 - Software is **hard**.
 - Engineers make mistakes **all** the time. 
-- hat is fine, it happens. I make mistakes too.
+- That is fine, it happens. I make mistakes too.
 
 But ***intentionally*** making mistakes isn't a responsible approach to development, ESPECIALLY if it comes at the expense of other teams, your company, & all your other colleagues that rely & put faith in you.
