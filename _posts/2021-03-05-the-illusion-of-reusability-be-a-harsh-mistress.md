@@ -203,17 +203,15 @@ Plus all those:
 - ad-hoc dev chats
 - the inevitable political pressure from upper management.
 
-# Software design isn't throwing the dice and taking risk
-
-Its a time to be carefully planning the codebase design, so that it can continue flourishing into the future.
+# Conclusion
 
 > "There's only a few problems so far, so lets keep going in this direction!"
 
-If you ever hear this, keep in mind its important to think long & hard on design decisions that can be potentially expensive in the future.
+If you ever hear this, keep in mind that its important to think long & hard on design decisions that can be potentially expensive in the future.
 
 An approach of *intentionally* pushing design flaws to the side because "it makes my life easier" isn't an acceptable approach. Companies rely on developers to be responsible & to act in the best interest of the company...
 - Software is **hard**.
 - Engineers make mistakes **all** the time. 
 - hat is fine, it happens. I make mistakes too.
 
-But ***intentionally*** making mistakes isn't a responsible approach to development, ESPECIALLY if it comes at the expense of other teams, your company, & all your other colleagues that rely & believe in you.
+But ***intentionally*** making mistakes isn't a responsible approach to development, ESPECIALLY if it comes at the expense of other teams, your company, & all your other colleagues that rely & put faith in you.
