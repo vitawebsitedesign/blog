@@ -147,13 +147,13 @@ Us & our team have been forced into a difficult situation - we now NEED to rewri
 Revisiting the original 3 issues:
 
 ---
-[![Scenario](https://i.imgur.com/9pjAYZA.png "Scenario")](https://i.imgur.com/9pjAYZA.png)
+[![Scenario](https://i.imgur.com/Hofcc2s.png "Scenario")](https://i.imgur.com/Hofcc2s.png)
 
 ---
-[![Scenario](https://i.imgur.com/yyVI0Lf.png "Scenario")](https://i.imgur.com/yyVI0Lf.png)
+[![Scenario](https://i.imgur.com/I72leYH.png "Scenario")](https://i.imgur.com/I72leYH.png)
 
 ---
-[![Scenario](https://i.imgur.com/EbHgo6e.png "Scenario")](https://i.imgur.com/EbHgo6e.png)
+[![Scenario](https://i.imgur.com/3BvZ67U.png "Scenario")](https://i.imgur.com/3BvZ67U.png)
 
 ---
 
