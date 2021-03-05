@@ -41,18 +41,19 @@ We cross-check with wireframes The UI team sent us, just to ensure our button ca
 ---
 [![Scenario](https://i.imgur.com/9pjAYZA.png "Scenario")](https://i.imgur.com/9pjAYZA.png)
 
+Wrapper elements beside & below our button
+
 ---
 [![Scenario](https://i.imgur.com/yyVI0Lf.png "Scenario")](https://i.imgur.com/yyVI0Lf.png)
+
+Wrapper element beside our button
 
 ---
 [![Scenario](https://i.imgur.com/EbHgo6e.png "Scenario")](https://i.imgur.com/EbHgo6e.png)
 
----
+2 wrapper elements above our button, with vertical spacing between (to be consistent with the bottom margin of our button)
 
-From top-to-bottom:
-1. Wrapper elements beside & below our button
-1. Wrapper element beside our button
-1. 2 wrapper elements above our button, with vertical spacing between (to be consistent with the bottom margin of our button)
+---
 
 It seems our consumers can use our reusable button in all 3 scenarios.
 - We deliver the component library.
@@ -71,13 +72,19 @@ Now our reusable button needs to work with 1 **additional** product, containing 
 
 ---
 [![Scenario](https://i.imgur.com/Hofcc2s.png "Scenario")](https://i.imgur.com/Hofcc2s.png)
+
 Button is used inside an element with padding. Due to both the buttons bottom margin & wrapper bottom padding, we have this weird empty gap between the button & the bottom of the wrapper.
+
 ---
 [![Scenario](https://i.imgur.com/I72leYH.png "Scenario")](https://i.imgur.com/I72leYH.png)
+
 Our "reusable" button is re-used twice & placed side-by-side. There is double the spacing between them.
+
 ---
 [![Scenario](https://i.imgur.com/3BvZ67U.png "Scenario")](https://i.imgur.com/3BvZ67U.png)
+
 The consumer wants to have a slightly thinner button (a real-world example of this is using a re-usable button with different inner text). Since the padding & margin is hard-coded, we get this ugly button with strange spacing.
+
 ---
 
 Ah crap. Our button can't be re-used in these new scenarios!
