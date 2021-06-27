@@ -5,7 +5,7 @@ author: Michael Nguyen
 ---
 
 ## Summary
-People often praise [Ethereum 2.0’s](https://ethereum.org/en/eth2/) security, however the security risk posed by new centralised staking protocols is often downplayed. Staking protocols that are **decentralised** & don’t need to know staker **withdrawal keys**, will play a critical role in eth 2.0 network security, & this security risk not often discussed in detail.
+People often praise [Ethereum 2.0’s](https://ethereum.org/en/eth2/) security, however the security risks posed by new staking protocols is often downplayed. Staking protocols that are **decentralised** & don’t need to know staker **withdrawal keys** will play a critical role in eth 2.0 blockchain network security, & is not often discussed in detail.
 
 ## Centralized smoke and mirrors
 In Ethereum 2.0, validator maintenance requirements are a *relative* hassle (not as high as [Solana](https://docs.solana.com/running-validator/validator-reqs), but still more hassle than most stakers will ever bother with). Since humans like money, lots of ETH holders will just stake their ETH using a protocol that takes custody of their ETH (and/or custody of their withdrawal keys) which upholds the maintenance requirements for them. An example of this would be a [CEX](https://www.binance.com/en), or [Lido](https://lido.fi/).
@@ -37,12 +37,13 @@ Bleeding edge technology solutions such as Rocketpool will usually require tradi
 
 And the most important one that is basically **NOT discussed anywhere** - these "liquid staking" providers involving conversions between tokens, marking a capital gains tax (CGT) event & removing potential long-term CGT advantages that usually comes with staking alone.
 
-With these 4 points said (and whilst the internet usually argues 1 of the above), one can state that these tradeoffs are worth the network security improvement. Especially a financially-oriented blockchain network such as Ethereum.
+## Great success?
+With the above 4 points said (and whilst the internet usually argues 1 of the above), one can state that these tradeoffs are worth the network security improvement. Especially a financially-oriented blockchain network such as Ethereum.
 
 From my subjective perspective, Rocketpool's decentralized staking protocol will be a critical cornerstone (an absolute *necessity* , even) in the ethereum 2.0 network.
 
-If the protocol fails, the potential security of the blockchain network decreases. And guess what happens if Rocketpool doesn't work? People will move to existing staking protocols that take custody of their private or withdrawal keys. And hacking the DAO/company that holds those keys is a lot easier than breaching a reputable cloud provider such as AWS.
+If the protocol fails, the potential security of the blockchain network decreases. And guess what happens if Rocketpool doesn't work? People will move to existing staking protocols that take custody of their **private** or **withdrawal** keys. And *HACKING* the DAO/company that holds those keys is a lot easier than breaching a reputable cloud provider such as AWS.
 
 Trust is an uphill battle in Ethereum's 2.0 blockchain network, & whilst we can shed light on the vulnerabilities & disadvantages of existing staking protocols, Rocketpool appears to be the only protocol tackling the problem head-on.
 
-Will it succeed? We should damn well hope so.
+Will it succeed? Well, we should damn well hope so.
