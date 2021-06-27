@@ -35,15 +35,15 @@ Bleeding edge technology solutions such as Rocketpool will usually require tradi
 - It recently encountered a hurdle (aka **0x02**) where the [eth 2.0 protocol awards staking rewards to the validator directly](https://github.com/ethereum/eth2.0-specs/pull/2454), which in Rocketpool’s case, is actually someone validating for Rocketpool, rather than rocketpool themselves. Thus Rocketpool will be unable to distribute those staking rewards to their token holders (stakers)
 - Its remains to be battle tested. As usual, new smart contracts potentially have **vulnerabilities** undiscovered by auditors
 
-And the most important one that is basically **NOT discussed anywhere** - these "liquid staking" providers involving conversions between tokens, marking a capital gains tax (CGT) event & removing potential long-term CGT advantages that usually comes with staking alone.
+And the most important one that is basically **NOT discussed anywhere** - these "liquid staking" providers involving conversions between tokens, marking a [capital gains tax (CGT)](https://www.ato.gov.au/general/capital-gains-tax/) event & removing potential long-term CGT advantages that usually comes with staking alone.
 
 ## Great success?
-With the above 4 points said (and whilst the internet usually argues 1 of the above), one can state that these tradeoffs are worth the network security improvement. Especially a financially-oriented blockchain network such as Ethereum.
+With the above 4 points said (and whilst the internet usually argues 1 of the above), one can state that these tradeoffs are worth the network security improvement. Especially a [financially-oriented blockchain](https://defipulse.com/defi-list/) network such as Ethereum.
 
 From my subjective perspective, Rocketpool's decentralized staking protocol will be a critical cornerstone (an absolute *necessity* , even) in the ethereum 2.0 network.
 
 If the protocol fails, the potential security of the blockchain network decreases. And guess what happens if Rocketpool doesn't work? People will move to existing staking protocols that take custody of their **private** or **withdrawal** keys. And *HACKING* the DAO/company that holds those keys is a lot easier than breaching a reputable cloud provider such as AWS.
 
-Trust is an uphill battle in Ethereum's 2.0 blockchain network, & whilst we can shed light on the vulnerabilities & disadvantages of existing staking protocols, Rocketpool appears to be the only protocol tackling the problem head-on.
+Trust is an uphill battle in Ethereum's 2.0 blockchain network, & whilst we can shed light on the vulnerabilities & disadvantages of existing staking protocols, Rocketpool appears to be the only protocol brave enough to tackle the problem head-on.
 
 Will it succeed? Well, we should damn well hope so.
