@@ -16,7 +16,7 @@ Hence, these providers are good, but still introduce a **security risk** to the 
 
 Low risk & high reward baby! Is it even possible to solve the decentralisation problem whilst [preserving other important attributes](https://docs.ethhub.io/ethereum-roadmap/ethereum-2.0/sharding/)?
 
-## Decentralising human trust
+## Decentralising human trust is bloody hard
 This vulnerability of validator pools isn't discussed alot, & is often downplayed.
 
 This vulnerability must be removed through decentralisation. Whilst *"truly"* decentralised staking protocols don’t exist just yet, there is 1 protocol paving a way towards it. And they solve it by hosting validators on numerous **cloud providers** which have a strong track record of [IaaS](https://azure.microsoft.com/en-au/overview/what-is-iaas/) security. This is in contrast to a **DAO** approving validator providers.
@@ -27,7 +27,7 @@ While not yet released on the main-net (at time of writing), its decentralises s
 
 So this means the centralisation problem is solved.. right?
 
-## Tradeoffs
+## Free lunch huh? Count me in!
 Whilst Rocketpool solves the centralisation issue, it is indeed bleeding edge technology.
 
 Bleeding edge technology solutions such as Rocketpool will usually require trading off 1 quality to improve another one. In Rocketpool's case:
