@@ -153,31 +153,24 @@ $$
 - where $mph =$ maximum mana potion restore
 
 ### Decomposing the equation (RHS)
-$$
-vn = { td \over ct } cm
-vn = { h_r \over dps } \div ct . m
-$$
+$vn = { td \over ct } cm$
+
+$vn = { h_r \over dps } \div ct . m$
 
 - where $h_r =$ health remaining
 - where $dps =$ the raid's damage per second
 
-$$
-vn = h_r \div { d \over et } \div ct . cm
-$$
+$vn = h_r \div { d \over et } \div ct . cm$
 
 - where $d =$ the raid's damage so far as an absolute value
 - where $et =$ encounter time
 
-$$
-vn = h_r \div { h_x - h_c \over et } \div ct . cm
-$$
+$vn = h_r \div { h_x - h_c \over et } \div ct . cm$
 
 - where $h_x =$ target max health
 - where $h_c =$ target current health
 
-$$
-vn = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm
-$$
+$vn = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
 
 - where $t_c =$ current time in the encounter, expressed as unix timestamp
 - where $t_s =$ start time of the encounter, expressed as unix timestamp
@@ -222,9 +215,13 @@ Based on the above equation, we can identify the constant variables, & thankfull
 |      $c_m$                  |   Numeric                             |   `C`                                         |   TBD*****    |
 
 *\*Is 0 when item/spell already expended & not available. This means the variable functions as both a constant and a run-time variable.*
+
 *\*\*The equation uses multiplication instead of addition for mana tide restoration, so whilst technically the mana amount restored is variable, it can be treated as a fixed constant in calculations*
+
 *\*\*\*Calculating this run-time variable requires a bit more work, which we dive into the next section*
+
 *\*\*\*\*Encounters last a long-enough time span & hence; this can be reliably calculated using [expectancy](https://samuraitradingacademy.com/trading-expectancy/#:~:text=What%20is%20Trading%20Expectancy%3F,thirty%20to%20be%20statistically%20significant).), which is simply probability of proc chance multiplied by amount restored for one proc*
+
 *\*\*\*\*\*Value depends on rank used*
 
 After researching most of the variables, the remaining 2 fixed Variables we can try figure out are $c_m$ & $c_t$. Based on the wowhead database, the mana costs for each chain heal ranks ($c_m$) are:
