@@ -2,6 +2,7 @@
 title: Designing and programming an event-driven predictive model in Lua
 layout: post
 author: Michael Nguyen
+use_math: true
 ---
 
 This blog post details an 8-month journey in developing [predictive math algorithms](https://www.mathworks.com/discovery/predictive-modeling.html) in WoW & integrating them into the [TBC](https://wowpedia.fandom.com/wiki/Category:API_events) & [WeakAura](https://github.com/WeakAuras/WeakAuras2/wiki/API-Documentation) APIs. The WeakAuras integration requires deep knowledge of their API, often requiring experimentation to discover the full extent of their interface due to competing sources of incomplete & outdated documentation. 
@@ -43,7 +44,7 @@ To help understand our problem in more depth, we can run through a scenario:
 
 *“Suppose we are in an encounter with a target having 100 remaining hit points. If the raid has 20 dps roles each outputting 0.5 damage per second, & assuming a current mana pool level of 1000 mana, can a chain heal rank $vn$ be sustainably casted for this situation?”*
 
-A good first step to solving any math question is to identify the constants listed in the problem description. Then we can solve for \(vn\):
+A good first step to solving any math question is to identify the constants listed in the problem description. Then we can solve for $vn$:
 
 | Constant                    | Value | Description                                                                                                                                                                                                                                                                                                                                                                                                                            |
 |-----------------------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
