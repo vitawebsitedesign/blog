@@ -63,23 +63,20 @@ A good first step to solving any math question is to identify the constants list
 
 With our constants identified, we can solve for $vn$ to verify if it’s a viable rank of chain heal:
 
-$$
-vn =$ mana surplus at end $\geq 0
-vn =$ casts required until end of encounter $-$ mana required for each cast $\geq 0
-$$
+$vn =$ mana surplus at end $\geq 0$
 
-where $m =$ static mana available
-where $td =$ time to down
-where $ct =$ chain heal cast time
-where $cm =$ chain heal mana cost
+$vn =$ casts required until end of encounter $-$ mana required for each cast $\geq 0$
 
-$$
-vn = m - \left( h \div (n . d) \over ct \right)cm \geq 0
-$$
+- where $m =$ static mana available
+- where $td =$ time to down
+- where $ct =$ chain heal cast time
+- where $cm =$ chain heal mana cost
 
-where $h =$ remaining health
-where $n =$ number of raid members
-where $d =$ damage per second for each raid member
+$vn = m - \left( h \div (n . d) \over ct \right)cm \geq 0$
+
+- where $h =$ remaining health
+- where $n =$ number of raid members
+- where $d =$ damage per second for each raid member
 
 $vn = 1000 - \left( 100 \div (20 \div 2) \over 2.5 \right)540 \geq 0$
 
@@ -118,15 +115,11 @@ Originally sketched out in pencil on the back of a scrap envelope, it has now be
 ### Expanding the equation
 Previously, we developed an equation that only considered a subset of factors that exist in real encounters:
 
-$$
-vn = m - { h \div (n . d) \over ct } cm \geq 0
-$$
+$vn = m - { h \div (n . d) \over ct } cm \geq 0$
 
 The left-hand side basically asks the question: “how much mana surplus exists if a specific chain heal rank is casted continuously until end of the encounter”. But now that we’ve identified all influencing factors required to make our inputs reliable, we can now substitute these new inputs in lieu of $m$:
 
-$$
-vn = (mp + mf + mt + mi + mp) - { h \div (n . d) \over ct } cm \geq 0
-$$
+$vn = (mp + mf + mt + mi + mp) - { h \div (n . d) \over ct } cm \geq 0$
 
 - where $mp =$ current mana level.
 - where $mf =$ static mana restored every 5 seconds.
@@ -138,10 +131,9 @@ Excellent. Now that we’ve expanded the equation, all ***high-level*** equation
 
 ### Decomposing the equation (LHS)
 
-$$
-vn = mp + mf + mt + mi + mp
-vn = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } . iedm . iedc \right) + { mpl + mph \over 2 }
-$$
+$vn = mp + mf + mt + mi + mp$
+
+$vn = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } . iedm . iedc \right) + { mpl + mph \over 2 }$
 
 - where $mp =$ current mana level
 - where $mo =$ static mana restored every **1** second
@@ -177,9 +169,8 @@ $vn = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
 
 ### Re-composing the equation
 With the left & right sides decomposed, we can re-compose the 2 sides to finalize our equation:
-$$
-vn = m_e - m_r \ge 0
-$$
+
+$vn = m_e - m_r \ge 0$
 
 - $m_e \implies$ effective mana
 - $m_r \implies$ required mana
@@ -243,25 +234,19 @@ As of writing, tbc classic is at `2.5.4` (build `44171`).
 
 This infers a [haste rating conversion rate](https://wowwiki-archive.fandom.com/wiki/Haste) of **15.77** inside of the game engine, which we were able to verify across multiple sources & also by comparing the modified cast time duration displayed on the in-game cast tooltips. Using this verified value, we can now use it to solve the adjusted cast time ($ct$):
 
-$$
-ct = {b \over e }
-$$
+$ct = {b \over e }$
 
 - where $b =$ base cast time
 - where $e =$ extra casts from additional haste
 
-$$
-ct = b \div \left( 1 + \left( { hr \over hc } \div 100 \right) \right)
-$$
+$ct = b \div \left( 1 + \left( { hr \over hc } \div 100 \right) \right)$
 
 - where $hr =$ runtime haste rating
 - where $hc =$ haste rating conversion rate
 
 let $hr = 300$
 
-$$
-ct = 2.5 \div \left( 1 + \left( { 300 \over 15.77 } \div 100 \right) \right)
-$$
+$ct = 2.5 \div \left( 1 + \left( { 300 \over 15.77 } \div 100 \right) \right)$
 
 $\therefore ct = 2.1004$ (4 dp)
 
@@ -697,9 +682,7 @@ As a bonus piece of eye candy, we can also calculate the time differential, indi
 This is an ***incredible*** piece of useful information, & gives us a more accurate judgement on which rank to use. This is because whilst there are 3 chain heal ranks, often the most OPTIMAL rank is actually a mix of 2 ranks. For instance, 60% rank 4, 40% rank 5.
 
 We can calculate the time delta as available mana given time-to-down reaches 0, divided by the mana cost of each chain heal cast:
-$$
-\Delta = {mmp - mttd \over cm}
-$$
+$\Delta = {mmp - mttd \over cm}$
 
 - where $mttd =$ mana required for ttd to reach 0
 
