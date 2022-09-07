@@ -192,10 +192,10 @@ Based on the above equation, we can identify the constant variables, & thankfull
 |      $mo$                  |   Numeric                             |   `R`                                         |   n/a         |
 |      $td$                  |   Seconds (expressed as a time span)  |   `R`                                         |   n/a         |
 |      $mmp$                |   Numeric                             |   `R`                                         |   n/a         |
-|      $mtp$                |   Percentage                          |   `C`**                                       |   0 to 0.24*  |
-|      $ct$                  |   Numeric                             |   `C`**                                       |   TBD***      |
+|      $mtp$                |   Percentage                          |   `C`\*\*                                       |   0 to 0.24\*  |
+|      $ct$                  |   Numeric                             |   `C`\*\*                                       |   TBD\*\*\*      |
 |      $iedm$              |   Numeric                             |   `C`                                         |   300         |
-|      $iedc$              |   Percentage                          |   `C`****                                     |   .05         |
+|      $iedc$              |   Percentage                          |   `C`\*\*\*\*                                     |   .05         |
 |      $mpl$                |   Numeric                             |   `C`                                         |   0 or 1800*  |
 |      $mph$                |   Numeric                             |   `C`                                         |   0 or 3000*  |
 |      $h_r$  |   Numeric                             |   `R`                                         |   n/a         |
@@ -203,7 +203,7 @@ Based on the above equation, we can identify the constant variables, & thankfull
 |      $h_c$      |   Numeric                             |   `R`                                         |   n/a         |
 |      $t_c$      |   Numeric                             |   `R`                                         |   n/a         |
 |      $t_s$          |   Numeric                             |   `R`                                         |   n/a         |
-|      $c_m$                  |   Numeric                             |   `C`                                         |   TBD*****    |
+|      $c_m$                  |   Numeric                             |   `C`                                         |   TBD\*\*\*\*\*    |
 
 *\*Is 0 when item/spell already expended & not available. This means the variable functions as both a constant and a run-time variable.*
 
@@ -682,6 +682,7 @@ As a bonus piece of eye candy, we can also calculate the time differential, indi
 This is an ***incredible*** piece of useful information, & gives us a more accurate judgement on which rank to use. This is because whilst there are 3 chain heal ranks, often the most OPTIMAL rank is actually a mix of 2 ranks. For instance, 60% rank 4, 40% rank 5.
 
 We can calculate the time delta as available mana given time-to-down reaches 0, divided by the mana cost of each chain heal cast:
+
 $\Delta = {mmp - mttd \over cm}$
 
 - where $mttd =$ mana required for ttd to reach 0
@@ -729,25 +730,25 @@ Finally, with our predictive model developed & kicking in action, a few (of the 
 
 ![Illidari council](https://i.imgur.com/zwN1XgC.jpeg "Illidari council")
 
-- The Illidari Council, an encounter requiring high mental agility & capacity.
+The Illidari Council, an encounter requiring high mental agility & capacity.
 - We can see the calculated viability in the bottom-left. This image dictates good mana efficiency management throughout the fight, with rank 1 chain heal being viable, & rank 2 chain being non-viable. The “-2” indicates a deficit of 2 seconds, meaning that a little bit of mana needs to be conserved at the current encounter stage.
 - Since rank 1 is the lowest rank, this means that some casts need to be cancelled. Often healers require innervates due to difficulty in maintaining optimal mana efficiency during this encounter, but thankfully our formula allows us to easily maintain efficiency, thereby saving a critical innervate for another raid member.
 
 ![Illidan](https://i.imgur.com/A2xBw7t.jpeg "Illidan")
 
-- Illidan Stormrage, final boss of Black Temple.
+Illidan Stormrage, final boss of Black Temple.
 - This image illustrates rank 1 as the only viable rank, but also shows large “-107” second deficit, indicating a severe mana shortage at this stage of the fight.
 - Since the formula also considers consumables, this deficiency highlights that over-healing was performed at an earlier stage of this encounter, & for a resto shaman, this is likely during Illidan’s aerial phase or too much single-target healing during the phase 2 fire elementals, which could have been deferred to a more efficient class such as a holy paladin.
 
 ![Reaver](https://i.imgur.com/RxGR7O3.jpeg "Reaver")
 
-- Fel Reaver in Tempest Keep.
+Fel Reaver in Tempest Keep.
 - An excellent use case for our formula, as the damage is linear throughout, thereby improving the value of our unique prediction-based formula. Here we see that whilst rank 1 is viable, rank 2 is shown as being possible & should therefore be used over rank 1 to maximize healing-per-second (HPS).
 - We also see a surplus of only “+2” seconds, indicating near-perfect mana efficiency management.
 
 ![Kaelthas](https://i.imgur.com/qX60HoJ.jpeg "Kaelthas")
 
-- Kael’thas, final boss of Tempest Keep.
+Kael’thas, final boss of Tempest Keep.
 - Another great use case for our formula, as the encounter rewards mana preservation during most moments, but extreme healing output during certain moments. Here we see our calculated rank viability in the bottom-left, indicating rank 1 as the only viable option.
 - Unfortunately, it also shows a very severe deficit of “-408” seconds, indicating that we won’t be able to sustain healing to the end of the encounter. Thanks to our formula, we are able to  identify this beforehand & communicate this mana restriction to our teammates ahead of time, which may involve getting a valuable innervate for an upcoming healing-intensive phase.
 
