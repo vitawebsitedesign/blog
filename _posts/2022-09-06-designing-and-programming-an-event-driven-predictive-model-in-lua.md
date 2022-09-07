@@ -23,19 +23,23 @@ Since resto shamans suffer from severe mana issues, solving this problem would e
 To simplify this problem further, we can do an intentional (but invalid) assumption: more mana should always equals more healing output. If this were the case, solving the problem simply requires a math formula to ensure that mana usage remains **inversely correlated** to required output: 
 
 ![Mana efficiency comparison](https://i.imgur.com/P8LZ5TH.png "Mana efficiency comparison")
-<sup>This diagram depicts mana usage (blue) & required output (red).  Ideally these remain inversely correlated regardless of encounter time.  During times 24-31, we can see that there is insufficient mana to meet output. In order to meet output, we ideally expend mana more efficiently during times 1-8, represented as the grey line. If we were to solve our problem reliably via predictive modelling, our expenditure (blue line) should be matching the grey line.</sup>
+
+*This diagram depicts mana usage (blue) & required output (red).  Ideally these remain inversely correlated regardless of encounter time.  During times 24-31, we can see that there is insufficient mana to meet output. In order to meet output, we ideally expend mana more efficiently during times 1-8, represented as the grey line. If we were to solve our problem reliably via predictive modelling, our expenditure (blue line) should be matching the grey line.*
 
 The above diagram illustrates the problem we are solving using a composite chart. If we look at real data (real charts), we begin understanding just how complex our problem really is. Below are non-composite charts, displaying real data that was [captured](https://classic.warcraftlogs.com/) during a Muru twins encounter.
 
 ![Mana level during a muru twins encounter](https://i.imgur.com/0c7l7BJ.png "Mana level during a muru twins encounter")
-<sup>Mana level during the encounter (blue). Due to a large number of dynamic variables at play in different moments, mana expenditure rates differ throughout an encounter.</sup>
+
+*Mana level during the encounter (blue). Due to a large number of dynamic variables at play in different moments, mana expenditure rates differ throughout an encounter.*
 
 ![Raid-wide damage taken](https://i.imgur.com/XFu2vy8.png "Raid-wide damage taken")
-<sup>Healing output required (red). Due to damage being dealt non-uniformly during an encounter, some moments require low output whereas others require extremely high output. Ideally, mana is conserved during low-healing periods to then be spent when it’s needed the most. If we were to compare this chart vs our composite chart earlier on, a grey line (ideal mana expenditure) on this chart would always be inversely correlated to the red line.</sup>
+
+*Healing output required (red). Due to damage being dealt non-uniformly during an encounter, some moments require low output whereas others require extremely high output. Ideally, mana is conserved during low-healing periods to then be spent when it’s needed the most. If we were to compare this chart vs our composite chart earlier on, a grey line (ideal mana expenditure) on this chart would always be inversely correlated to the red line.*
 
 ![Healing output](https://i.imgur.com/tDHFdlx.png "Healing output")
-<sup>Actual output - aqua, lime & red show different chain heal ranks being used.  
-Due to mana being a scarce resource, various ranks need to be mixed together to sustainably meet required output throughout an encounter. It's difficult to identify the exact rank to use in each specific moment, which is the problem we aim to solve through our predictive modelling.</sup>
+
+*Actual output - aqua, lime & red show different chain heal ranks being used.  
+Due to mana being a scarce resource, various ranks need to be mixed together to sustainably meet required output throughout an encounter. It's difficult to identify the exact rank to use in each specific moment, which is the problem we aim to solve through our predictive modelling.*
 
 ## Designing the predictive model
 ### Example scenario
@@ -50,27 +54,35 @@ A good first step to solving any math question is to identify the constants list
 |-----------------------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Remaining target hit points | 100   | - Simply put, the raid needs to output 100 damage total to end this encounter.                                                                                                                                                                                                                                                                                                                                                         |
 | Number of dps roles         | 20    | - Number of roles in the raid that are specifically there to deal damage (instead of absorbing damage or healing).                                                                                                                                                                                                                                                                                                                     |
-| Damage per dps raid role    | 0.5   | - Measured in seconds, this is the average output for each dps role. - Since this is a run-time variable that fluctuates throughout the course of an encounter, it therefore must be re-calculated at a high frequency to be reliably used as input to any predictive modelling.  - We will treat this variable as a constant just to simplify this first example, & we will dive deeper into event-based triggers later in this post. |
+| Damage per dps raid role    | 0.5   | - Measured in seconds, this is the average output for each dps role.<br>- Since this is a run-time variable that fluctuates throughout the course of an encounter, it therefore must be re-calculated at a high frequency to be reliably used as input to any predictive modelling.<br>- We will treat this variable as a constant just to simplify this first example, & we will dive deeper into event-based triggers later in this post. |
 | Mana                        | 1000* | - Available mana to expend for chain heal                                                                                                                                                                                                                                                                                                                                                                                              |
-| Chain heal cast mana cost   | 540   | - Mana cost to output 1 chain heal.  - Whilst this example uses a fixed constant of 540, the actual cost in real encounters is more complicated (we will dive into tidal focus & t6p4 modifiers' later in this post).                                                                                                                                                                                                                  |
-| Chain heal cast time        | 2.5   | - Seconds required to output 1 chain heal.  - We will treat base cast as 2.5 seconds to simplify this first example, however the real cast time is more complicated (we will dive more into haste conversions later in this post).                                                                                                                                                                                                     |
+| Chain heal cast mana cost   | 540   | - Mana cost to output 1 chain heal.<br>- Whilst this example uses a fixed constant of 540, the actual cost in real encounters is more complicated (we will dive into tidal focus & t6p4 modifiers' later in this post).                                                                                                                                                                                                                  |
+| Chain heal cast time        | 2.5   | - Seconds required to output 1 chain heal.<br>- We will treat base cast as 2.5 seconds to simplify this first example, however the real cast time is more complicated (we will dive more into haste conversions later in this post).                                                                                                                                                                                                     |
 
 *For simplicity in this first example, we are assuming the mana pool as static (rather not the effective mana pool). Effective mana pool needs to be considered instead to make our predictive model accurate & reliable. For sake of explanation, this example uses static, & we will dive into effective mana pool calculations later in this post)*
 
 With our constants identified, we can solve for $vn$ to verify if it’s a viable rank of chain heal:
-$vn =$ mana surplus at end $\geq 0$
-$vn =$ casts required until end of encounter $-$ mana required for each cast $\geq 0$
+
+$$
+vn =$ mana surplus at end $\geq 0
+vn =$ casts required until end of encounter $-$ mana required for each cast $\geq 0
+$$
+
 where $m =$ static mana available
 where $td =$ time to down
 where $ct =$ chain heal cast time
 where $cm =$ chain heal mana cost
 
-$vn = m - \left( h \div (n . d) \over ct \right)cm \geq 0$
+$$
+vn = m - \left( h \div (n . d) \over ct \right)cm \geq 0
+$$
+
 where $h =$ remaining health
 where $n =$ number of raid members
 where $d =$ damage per second for each raid member
 
 $vn = 1000 - \left( 100 \div (20 \div 2) \over 2.5 \right)540 \geq 0$
+
 $\therefore vn \lt 0 \implies vn$ is not a viable chain heal rank
 
 ### Problem solved? ...right?
@@ -91,7 +103,7 @@ Due to this post already being too long for my liking, I'll jump straight to it 
 Originally sketched out in pencil on the back of a scrap envelope, it has now been converted into a pristine diagram for your viewing pleasure:
 
 ![Overview of all influencing factors](https://i.imgur.com/w6JnP2t.png "Overview of all influencing factors")
-<sup>All factors that need to be considered are listed in the middle, from “static mp5 data” to “cooldowns data”</sup>
+*All factors that need to be considered are listed in the middle, from “static mp5 data” to “cooldowns data”*
 
 **Static mp5 data**. Mana is actually restored over time, albeit at a very low & reduced rate (often referred to as the “casting mp5” rate). This is an equation in itself that involves additional sub-factors:
 -   [Insightful Earthstorm Diamond](https://tbc.wowhead.com/spell=27521/mana-restore) (IED) - an item that has a chance of restoring a fixed amount of mana. More about this math in a second.
@@ -105,56 +117,81 @@ Originally sketched out in pencil on the back of a scrap envelope, it has now be
 
 ### Expanding the equation
 Previously, we developed an equation that only considered a subset of factors that exist in real encounters:
-$vn = m - { h \div (n . d) \over ct } cm \geq 0$
+
+$$
+vn = m - { h \div (n . d) \over ct } cm \geq 0
+$$
 
 The left-hand side basically asks the question: “how much mana surplus exists if a specific chain heal rank is casted continuously until end of the encounter”. But now that we’ve identified all influencing factors required to make our inputs reliable, we can now substitute these new inputs in lieu of $m$:
 
-$vn = (mp + mf + mt + mi + mp) - { h \div (n . d) \over ct } cm \geq 0$
-where $mp =$ current mana level
-where $mf =$ static mana restored every 5 seconds
-where $mt =$ absolute amount of mana restored from mana tide
-where $mi =$ expected mana to be restored from ied
-where $mp =$ mana restored from potion usage
+$$
+vn = (mp + mf + mt + mi + mp) - { h \div (n . d) \over ct } cm \geq 0
+$$
+
+- where $mp =$ current mana level.
+- where $mf =$ static mana restored every 5 seconds.
+- where $mt =$ absolute amount of mana restored from mana tide.
+- where $mi =$ expected mana to be restored from ied.
+- where $mp =$ mana restored from potion usage.
 
 Excellent. Now that we’ve expanded the equation, all ***high-level*** equation variables are now defined. We can now start decomposing the equation to identify all ***low-level*** equation variables. This allows us to identify any other remaining factors that are needed to implement our predictive model successfully, & to ensure we can actually source all of the input necessary for our model.
 
 ### Decomposing the equation (LHS)
-$vn = mp + mf + mt + mi + mp$
-$vn = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } . iedm . iedc \right) + { mpl + mph \over 2 }$
-where $mp =$ current mana level
-where $mo =$ static mana restored every **1** second
-where $mmp =$ maximum mana level
-where $mtp =$ percentage of maximum mana level restored from mana tide
-where $iedm =$ mana restored from an IED proc
-where $iedc =$ probability of IED proc
-where $mpl =$ minimum mana potion restore
-where $mph =$ maximum mana potion restore
+
+$$
+vn = mp + mf + mt + mi + mp
+vn = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } . iedm . iedc \right) + { mpl + mph \over 2 }
+$$
+
+- where $mp =$ current mana level
+- where $mo =$ static mana restored every **1** second
+- where $mmp =$ maximum mana level
+- where $mtp =$ percentage of maximum mana level restored from mana tide
+- where $iedm =$ mana restored from an IED proc
+- where $iedc =$ probability of IED proc
+- where $mpl =$ minimum mana potion restore
+- where $mph =$ maximum mana potion restore
 
 ### Decomposing the equation (RHS)
-$vn = { td \over ct } cm$
-$vn = { h_r \over dps } \div ct . m$
-where $h_r =$ health remaining
-where $dps =$ the raid's damage per second
+$$
+vn = { td \over ct } cm
+vn = { h_r \over dps } \div ct . m
+$$
 
-$vn = h_r \div { d \over et } \div ct . cm$
-where $d =$ the raid's damage so far as an absolute value
-where $et =$ encounter time
+- where $h_r =$ health remaining
+- where $dps =$ the raid's damage per second
 
-$vn = h_r \div { h_x - h_c \over et } \div ct . cm$
-where $h_x =$ target max health
-where $h_c =$ target current health
+$$
+vn = h_r \div { d \over et } \div ct . cm
+$$
 
-$vn = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
-where $t_c =$ current time in the encounter, expressed as unix timestamp
-where $t_s =$ start time of the encounter, expressed as unix timestamp
+- where $d =$ the raid's damage so far as an absolute value
+- where $et =$ encounter time
+
+$$
+vn = h_r \div { h_x - h_c \over et } \div ct . cm
+$$
+
+- where $h_x =$ target max health
+- where $h_c =$ target current health
+
+$$
+vn = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm
+$$
+
+- where $t_c =$ current time in the encounter, expressed as unix timestamp
+- where $t_s =$ start time of the encounter, expressed as unix timestamp
 
 ### Re-composing the equation
 With the left & right sides decomposed, we can re-compose the 2 sides to finalize our equation:
-$vn = m_e - m_r \ge 0$
-$m_e \implies$ effective mana
-$m_r \implies$ required mana
-where $m_e = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 }$
-where $m_r = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
+$$
+vn = m_e - m_r \ge 0
+$$
+
+- $m_e \implies$ effective mana
+- $m_r \implies$ required mana
+- where $m_e = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 }$
+- where $m_r = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
 
 $\therefore vn = \left( mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 } \right) - \left( h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm \right) \ge 0 \implies$ chain heal rank $vn$ is viable
 
@@ -184,11 +221,11 @@ Based on the above equation, we can identify the constant variables, & thankfull
 |      $t_s$          |   Numeric                             |   `R`                                         |   n/a         |
 |      $c_m$                  |   Numeric                             |   `C`                                         |   TBD*****    |
 
-**Is 0 when item/spell already expended & not available. This means the variable functions as both a constant and a run-time variable.*
-***The equation uses multiplication instead of addition for mana tide restoration, so whilst technically the mana amount restored is variable, it can be treated as a fixed constant in calculations*
-****Calculating this run-time variable requires a bit more work, which we dive into the next section*
-*****Encounters last a long-enough time span & hence; this can be reliably calculated using [expectancy](https://samuraitradingacademy.com/trading-expectancy/#:~:text=What%20is%20Trading%20Expectancy%3F,thirty%20to%20be%20statistically%20significant).), which is simply probability of proc chance multiplied by amount restored for one proc*
-******Value depends on rank used*
+*\*Is 0 when item/spell already expended & not available. This means the variable functions as both a constant and a run-time variable.*
+*\*\*The equation uses multiplication instead of addition for mana tide restoration, so whilst technically the mana amount restored is variable, it can be treated as a fixed constant in calculations*
+*\*\*\*Calculating this run-time variable requires a bit more work, which we dive into the next section*
+*\*\*\*\*Encounters last a long-enough time span & hence; this can be reliably calculated using [expectancy](https://samuraitradingacademy.com/trading-expectancy/#:~:text=What%20is%20Trading%20Expectancy%3F,thirty%20to%20be%20statistically%20significant).), which is simply probability of proc chance multiplied by amount restored for one proc*
+*\*\*\*\*\*Value depends on rank used*
 
 After researching most of the variables, the remaining 2 fixed Variables we can try figure out are $c_m$ & $c_t$. Based on the wowhead database, the mana costs for each chain heal ranks ($c_m$) are:
 
@@ -199,7 +236,8 @@ After researching most of the variables, the remaining 2 fixed Variables we can 
 |      $v_3$               |   [405](https://tbc.wowhead.com/spell=10623/chain-heal)                       |   344.25                       |
 |      $v_2$               |   [315](https://tbc.wowhead.com/spell=10622/chain-heal)                       |   267.75                       |
 |      $v_1$               |   [260](https://tbc.wowhead.com/spell=1064/chain-heal)                       |   221.00                       |
-**85% reduction after [tier 6 4-piece bonus](https://tbc.wowhead.com/item-set=683/skyshatter-raiment#wh89j34tn97) & [5/5 tidal focus.](https://tbc.wowhead.com/spell=16217/tidal-focus) These “actual costs” are not displayed in-game in the tooltips, & instead must be manually calculated to obtain the correct values*
+
+*\*85% reduction after [tier 6 4-piece bonus](https://tbc.wowhead.com/item-set=683/skyshatter-raiment#wh89j34tn97) & [5/5 tidal focus.](https://tbc.wowhead.com/spell=16217/tidal-focus) These “actual costs” are not displayed in-game in the tooltips, & instead must be manually calculated to obtain the correct values*
 
 This gives us $c_m$, but we still need to solve for $ct$...
 
@@ -208,16 +246,26 @@ As of writing, tbc classic is at `2.5.4` (build `44171`).
 
 This infers a [haste rating conversion rate](https://wowwiki-archive.fandom.com/wiki/Haste) of **15.77** inside of the game engine, which we were able to verify across multiple sources & also by comparing the modified cast time duration displayed on the in-game cast tooltips. Using this verified value, we can now use it to solve the adjusted cast time ($ct$):
 
-$ct = {b \over e }$
-where $b =$ base cast time
-where $e =$ extra casts from additional haste
+$$
+ct = {b \over e }
+$$
 
-$ct = b \div \left( 1 + \left( { hr \over hc } \div 100 \right) \right)$
-where $hr =$ runtime haste rating
-where $hc =$ haste rating conversion rate
+- where $b =$ base cast time
+- where $e =$ extra casts from additional haste
+
+$$
+ct = b \div \left( 1 + \left( { hr \over hc } \div 100 \right) \right)
+$$
+
+- where $hr =$ runtime haste rating
+- where $hc =$ haste rating conversion rate
 
 let $hr = 300$
-$ct = 2.5 \div \left( 1 + \left( { 300 \over 15.77 } \div 100 \right) \right)$
+
+$$
+ct = 2.5 \div \left( 1 + \left( { 300 \over 15.77 } \div 100 \right) \right)
+$$
+
 $\therefore ct = 2.1004$ (4 dp)
 
 ...and that’s the last fixed variable!
@@ -233,6 +281,7 @@ There are many different approaches to translating pseudocode into actual code.
 For those fans of the [Code Complete](https://www.amazon.com/Code-Complete-Practical-Handbook-Construction/dp/0735619670) construction handbook, the ideal weapon of choice is often [the Pseudocode Programming Process](http://ps.informatik.uni-tuebingen.de/teaching/ss15/sct/StudentMaterial/09%20-%20Noah%20Doersing%20-%20pseudocode.pdf). And since we already have our list of inputs, the natural process is to start grouping the inputs into “purposes”, then each “purpose” gets translated into 1 method.
 
 For reading convenience, the formula will be shown again below:
+
 $\therefore vn = \left( mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 } \right) - \left( h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm \right) \ge 0 \implies$ chain heal rank $vn$ is viable
 
 |       Input                                               |     Purpose                              |
@@ -246,6 +295,7 @@ $\therefore vn = \left( mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } ied
 |      $mmp$ $mtp$                                  |   get mana restoration from mana tide    |
 |      $iedm$ $iedc$                              |   get mana restoration from ied gem      |
 |      $mpl$ $mph$                                  |   get mana restoration from mana potion  |
+
 If each table row is 1 method, we would then just need [a driver method](https://stackoverflow.com/questions/1451543/what-does-driver-program-mean#:~:text=A%20driver%20is%20generally%20a,outputting%20to%20CSV%20and%20HTML.) to call them in the right order. It doesn’t really matter what we call the driver method (aslong as it makes sense), & I eventually decided to call mine "get_ideal_chr".
 
 This gives us a nice pseudocode skeleton to start filling in with actual code:
@@ -650,8 +700,11 @@ As a bonus piece of eye candy, we can also calculate the time differential, indi
 This is an ***incredible*** piece of useful information, & gives us a more accurate judgement on which rank to use. This is because whilst there are 3 chain heal ranks, often the most OPTIMAL rank is actually a mix of 2 ranks. For instance, 60% rank 4, 40% rank 5.
 
 We can calculate the time delta as available mana given time-to-down reaches 0, divided by the mana cost of each chain heal cast:
-$\Delta = {mmp - mttd \over cm}$
-where $mttd =$ mana required for ttd to reach 0
+$$
+\Delta = {mmp - mttd \over cm}
+$$
+
+- where $mttd =$ mana required for ttd to reach 0
 
 With the equation defined, we can now write the Lua equivalent, & add the necessary code to drive the calculations upon trigger:
 ```lua
@@ -693,27 +746,49 @@ end
 
 ### Real case studies
 Finally, with our predictive model developed & kicking in action, a few (of the many) insightful moments that my formula provided are illustrated below.
+
 ![Illidari council](https://i.imgur.com/zwN1XgC.jpeg "Illidari council")
-<sup>The Illidari Council, an encounter requiring high mental agility & capacity.<br>We can see the calculated viability in the bottom-left. This image dictates good mana efficiency management throughout the fight, with rank 1 chain heal being viable, & rank 2 chain being non-viable. The “-2” indicates a deficit of 2 seconds, meaning that a little bit of mana needs to be conserved at the current encounter stage. Since rank 1 is the lowest rank, this means that some casts need to be cancelled. Often healers require innervates due to difficulty in maintaining optimal mana efficiency during this encounter, but thankfully our formula allows us to easily maintain efficiency, thereby saving a critical innervate for another raid member.</sup>
+
+- The Illidari Council, an encounter requiring high mental agility & capacity.
+- We can see the calculated viability in the bottom-left. This image dictates good mana efficiency management throughout the fight, with rank 1 chain heal being viable, & rank 2 chain being non-viable. The “-2” indicates a deficit of 2 seconds, meaning that a little bit of mana needs to be conserved at the current encounter stage.
+- Since rank 1 is the lowest rank, this means that some casts need to be cancelled. Often healers require innervates due to difficulty in maintaining optimal mana efficiency during this encounter, but thankfully our formula allows us to easily maintain efficiency, thereby saving a critical innervate for another raid member.
 
 ![Illidan](https://i.imgur.com/A2xBw7t.jpeg "Illidan")
-<sup>Illidan Stormrage, final boss of Black Temple.<br>This image illustrates rank 1 as the only viable rank, but also shows large “-107” second deficit, indicating a severe mana shortage at this stage of the fight. Since the formula also considers consumables, this deficiency highlights that over-healing was performed at an earlier stage of this encounter, & for a resto shaman, this is likely during Illidan’s aerial phase or too much single-target healing during the phase 2 fire elementals, which could have been deferred to a more efficient class such as a holy paladin.</sup>
+
+- Illidan Stormrage, final boss of Black Temple.
+- This image illustrates rank 1 as the only viable rank, but also shows large “-107” second deficit, indicating a severe mana shortage at this stage of the fight.
+- Since the formula also considers consumables, this deficiency highlights that over-healing was performed at an earlier stage of this encounter, & for a resto shaman, this is likely during Illidan’s aerial phase or too much single-target healing during the phase 2 fire elementals, which could have been deferred to a more efficient class such as a holy paladin.
+
 ![Reaver](https://i.imgur.com/RxGR7O3.jpeg "Reaver")
-<sup>Fel Reaver in Tempest Keep.<br>An excellent use case for our formula, as the damage is linear throughout, thereby improving the value of our unique prediction-based formula. Here we see that whilst rank 1 is viable, rank 2 is shown as being possible & should therefore be used over rank 1 to maximize healing-per-second (HPS). We also see a surplus of only “+2” seconds, indicating near-perfect mana efficiency management.</sup>
+
+- Fel Reaver in Tempest Keep.
+- An excellent use case for our formula, as the damage is linear throughout, thereby improving the value of our unique prediction-based formula. Here we see that whilst rank 1 is viable, rank 2 is shown as being possible & should therefore be used over rank 1 to maximize healing-per-second (HPS).
+- We also see a surplus of only “+2” seconds, indicating near-perfect mana efficiency management.
+
 ![Kaelthas](https://i.imgur.com/qX60HoJ.jpeg "Kaelthas")
-<sup>Kael’thas, final boss of Tempest Keep.<br>Another great use case for our formula, as the encounter rewards mana preservation during most moments, but extreme healing output during certain moments. Here we see our calculated rank viability in the bottom-left, indicating rank 1 as the only viable option.<br>Unfortunately, it also shows a very severe deficit of “-408” seconds, indicating that we won’t be able to sustain healing to the end of the encounter. Thanks to our formula, we are able to  identify this beforehand & communicate this mana restriction to our teammates ahead of time, which may involve getting a valuable innervate for an upcoming healing-intensive phase.</sup>
+
+- Kael’thas, final boss of Tempest Keep.
+- Another great use case for our formula, as the encounter rewards mana preservation during most moments, but extreme healing output during certain moments. Here we see our calculated rank viability in the bottom-left, indicating rank 1 as the only viable option.
+- Unfortunately, it also shows a very severe deficit of “-408” seconds, indicating that we won’t be able to sustain healing to the end of the encounter. Thanks to our formula, we are able to  identify this beforehand & communicate this mana restriction to our teammates ahead of time, which may involve getting a valuable innervate for an upcoming healing-intensive phase.
 
 ### Rank progression during code development of the formula
 As we can expect, the predictive model significantly enhanced our healing performance over a very short period of time.
 
 ![Illidari Council progress](https://i.imgur.com/LocI3yj.png "Illidari Council progress")
-<sup>Illidari Council progress</sup>
+
+*Illidari Council progress*
+
 ![Najentus progress](https://i.imgur.com/2Zljdcr.png "Najentus progress")
-<sup>Najentus progress</sup>
+
+*Najentus progress*
+
 ![Kael’thas progress](https://i.imgur.com/WUtdaoZ.png "Kael’thas progress")
-<sup>Kael’thas progress</sup>
+
+*Kael’thas progress*
+
 ![Void Reaver progress](https://i.imgur.com/GxObBOn.png "Void Reaver progress")
-<sup>Void Reaver progress</sup>
+
+*Void Reaver progress*
 
 ## Conclusion
 By leveraging the TBC & WA APIs, we were able to successfully implement a predictive model using math in a Lua module.
