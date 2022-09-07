@@ -44,7 +44,7 @@ To help understand our problem in more depth, we can run through a scenario:
 
 *“Suppose we are in an encounter with a target having 100 remaining hit points. If the raid has 20 dps roles each outputting 0.5 damage per second, & assuming a current mana pool level of 1000 mana, can a chain heal rank $vn$ be sustainably casted for this situation?”*
 
-A good first step to solving any math question is to identify the constants listed in the problem description. Then we can solve for \(vn\):
+A good first step to solving any math question is to identify the constants listed in the problem description. Then we can solve for $vn$:
 
 | Constant                    | Value | Description                                                                                                                                                                                                                                                                                                                                                                                                                            |
 |-----------------------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
