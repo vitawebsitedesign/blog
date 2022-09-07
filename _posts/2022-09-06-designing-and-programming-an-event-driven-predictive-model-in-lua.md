@@ -1,4 +1,3 @@
-
 ---
 title: Designing and programming an event-driven predictive model in Lua
 layout: post
