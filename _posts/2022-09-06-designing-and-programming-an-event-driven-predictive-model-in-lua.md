@@ -2,6 +2,7 @@
 title: Designing and programming an event-driven predictive model in Lua
 layout: post
 author: Michael Nguyen
+use_math: true
 ---
 
 This blog post details an 8-month journey in developing [predictive math algorithms](https://www.mathworks.com/discovery/predictive-modeling.html) in WoW & integrating them into the [TBC](https://wowpedia.fandom.com/wiki/Category:API_events) & [WeakAura](https://github.com/WeakAuras/WeakAuras2/wiki/API-Documentation) APIs. The WeakAuras integration requires deep knowledge of their API, often requiring experimentation to discover the full extent of their interface due to competing sources of incomplete & outdated documentation. 
