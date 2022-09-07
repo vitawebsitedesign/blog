@@ -1,6 +1,6 @@
 
 ---
-title: Designing & programming an event-driven predictive model in Lua
+title: Designing and programming an event-driven predictive model in Lua
 layout: post
 author: Michael Nguyen
 ---
