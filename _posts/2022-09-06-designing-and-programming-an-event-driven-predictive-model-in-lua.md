@@ -67,6 +67,8 @@ $vn =$ mana surplus at end $\geq 0$
 
 $vn =$ casts required until end of encounter $-$ mana required for each cast $\geq 0$
 
+$vn = m - { td \over ct } cm \ge 0$
+
 - where $m =$ static mana available
 - where $td =$ time to down
 - where $ct =$ chain heal cast time
@@ -78,7 +80,7 @@ $vn = m - \left( h \div (n . d) \over ct \right)cm \geq 0$
 - where $n =$ number of raid members
 - where $d =$ damage per second for each raid member
 
-$vn = 1000 - \left( 100 \div (20 \div 2) \over 2.5 \right)540 \geq 0$
+$vn = 1000 - \left( 100 \div (20 \div 0.5) \over 2.5 \right)540 \geq 0$
 
 $\therefore vn \lt 0 \implies vn$ is not a viable chain heal rank
 
@@ -137,20 +139,25 @@ $vn = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } . iedm . iedc \right)
 
 - where $mp =$ current mana level
 - where $mo =$ static mana restored every **1** second
+- where $td =$ time to down
 - where $mmp =$ maximum mana level
 - where $mtp =$ percentage of maximum mana level restored from mana tide
+- where $ct =$ chain heal cast time
 - where $iedm =$ mana restored from an IED proc
 - where $iedc =$ probability of IED proc
 - where $mpl =$ minimum mana potion restore
 - where $mph =$ maximum mana potion restore
 
 ### Decomposing the equation (RHS)
-$vn = { td \over ct } cm$
 
-$vn = { h_r \over dps } \div ct . m$
+$vn = \left( h \div (n . d) \over ct \right) cm$
+
+$vn = \left( h_r \div dps \over ct \right) cm$
 
 - where $h_r =$ health remaining
 - where $dps =$ the raid's damage per second
+
+$vn = { h_r \over dps } \div ct . cm$
 
 $vn = h_r \div { d \over et } \div ct . cm$
 
@@ -172,10 +179,13 @@ With the left & right sides decomposed, we can re-compose the 2 sides to finaliz
 
 $vn = m_e - m_r \ge 0$
 
-- $m_e \implies$ effective mana
-- $m_r \implies$ required mana
-- where $m_e = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 }$
-- where $m_r = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
+$m_e \implies$ effective mana
+
+$m_r \implies$ required mana
+
+$m_e = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 }$
+
+$m_r = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$
 
 $\therefore vn = \left( mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 } \right) - \left( h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm \right) \ge 0 \implies$ chain heal rank $vn$ is viable
 
@@ -203,7 +213,7 @@ Based on the above equation, we can identify the constant variables, & thankfull
 |      $h_c$      |   Numeric                             |   `R`                                         |   n/a         |
 |      $t_c$      |   Numeric                             |   `R`                                         |   n/a         |
 |      $t_s$          |   Numeric                             |   `R`                                         |   n/a         |
-|      $c_m$                  |   Numeric                             |   `C`                                         |   TBD\*\*\*\*\*    |
+|      $cm$                  |   Numeric                             |   `C`                                         |   TBD\*\*\*\*\*    |
 
 *\*Is 0 when item/spell already expended & not available. This means the variable functions as both a constant and a run-time variable.*
 
@@ -215,9 +225,9 @@ Based on the above equation, we can identify the constant variables, & thankfull
 
 *\*\*\*\*\*Value depends on rank used*
 
-After researching most of the variables, the remaining 2 fixed Variables we can try figure out are $c_m$ & $c_t$. Based on the wowhead database, the mana costs for each chain heal ranks ($c_m$) are:
+After researching most of the variables, the remaining 2 fixed Variables we can try figure out are $cm$ & $c_t$. Based on the wowhead database, the mana costs for each chain heal ranks ($cm$) are:
 
-|       Level for $vn$   |     Base value for  $c_m$   |     Actual value for  $c_m$*  |
+|       Level for $vn$   |     Base value for  $cm$   |     Actual value for  $cm$*  |
 |--------------------------|-----------------------------|--------------------------------|
 |      $v_5$               |   [540](https://tbc.wowhead.com/spell=25423/chain-heal)                       |   459.00                       |
 |      $v_4$               |   [435](https://tbc.wowhead.com/spell=25422/chain-heal)                       |   369.75                       |
@@ -227,7 +237,7 @@ After researching most of the variables, the remaining 2 fixed Variables we can 
 
 *\*85% reduction after [tier 6 4-piece bonus](https://tbc.wowhead.com/item-set=683/skyshatter-raiment#wh89j34tn97) & [5/5 tidal focus.](https://tbc.wowhead.com/spell=16217/tidal-focus) These “actual costs” are not displayed in-game in the tooltips, & instead must be manually calculated to obtain the correct values*
 
-This gives us $c_m$, but we still need to solve for $ct$...
+This gives us $cm$, but we still need to solve for $ct$...
 
 ### Solving the hasted cast time formula
 As of writing, tbc classic is at `2.5.4` (build `44171`).
@@ -685,7 +695,7 @@ We can calculate the time delta as available mana given time-to-down reaches 0, 
 
 $\Delta = {mmp - mttd \over cm}$
 
-- where $mttd =$ mana required for ttd to reach 0
+- where $mttd =$ mana required for $ttd$ to reach 0
 
 With the equation defined, we can now write the Lua equivalent, & add the necessary code to drive the calculations upon trigger:
 ```lua
