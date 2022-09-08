@@ -4,8 +4,8 @@ layout: default
 ---
 
 <section>
-	<h1>Untold stories</h1>
-	<h4>Software Engineer</h4>
+	<h1>Memento</h1>
+	<h4>Software Engineer blog</h4>
 </section>
 <section>
 	<small>
