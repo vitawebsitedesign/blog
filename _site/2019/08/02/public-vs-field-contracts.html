@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Public vs Field contracts | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Public vs Field contracts" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Consider below:" />
+<meta property="og:description" content="Consider below:" />
+<link rel="canonical" href="http://localhost:4000/2019/08/02/public-vs-field-contracts.html" />
+<meta property="og:url" content="http://localhost:4000/2019/08/02/public-vs-field-contracts.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-08-02T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Public vs Field contracts" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-08-02T00:00:00+10:00","datePublished":"2019-08-02T00:00:00+10:00","description":"Consider below:","headline":"Public vs Field contracts","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/08/02/public-vs-field-contracts.html"},"url":"http://localhost:4000/2019/08/02/public-vs-field-contracts.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#public-field">Public field</a></li>
+<li class="toc-entry toc-h2"><a href="#default-auto-getter-property">Default auto getter property</a></li>
+<li class="toc-entry toc-h2"><a href="#malleable-ie-future-proof">Malleable (i.e.: future proof)</a></li>
+<li class="toc-entry toc-h2"><a href="#how-c-auto-properties-achieve-malleability">How c# auto properties achieve malleability</a></li>
+<li class="toc-entry toc-h2"><a href="#examples-after-auto-property-compilation">Examples (after auto property compilation)</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#example-1-changing-the-value-returned-based-on-state">Example 1: changing the value returned based on state</a></li>
+<li class="toc-entry toc-h3"><a href="#example-2-validating-the-value-and-throwing-if-invalid">Example 2: validating the value and throwing if invalid</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#above-examples-with-properties">Above examples with properties</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#example-1-changing-the-value-returned-based-on-state-1">Example 1: changing the value returned based on state</a></li>
+<li class="toc-entry toc-h3"><a href="#example-2-validating-the-value-and-throwing-if-invalid-1">Example 2: validating the value and throwing if invalid</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#so-are-auto-property-getters-code-smell-compared-to-public-fields">So are auto property getters code smell compared to public fields?</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Public vs Field contracts</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-08-02T00:00:00+10:00" itemprop="datePublished">
+        Aug 2, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Consider below:</p>
+
+<h2 id="public-field">Public field</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="kt">var</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>vs</p>
+
+<h2 id="default-auto-getter-property">Default auto getter property</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Var</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>and consider how they are both accessed:</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">instance</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">A</span><span class="p">();</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">A</span><span class="p">.</span><span class="n">Var</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Even though default auto property getters are touted by some as code smell.</p>
+
+<p>But they do serve a purpose - malleable code</p>
+
+<h2 id="malleable-ie-future-proof">Malleable (i.e.: future proof)</h2>
+<p>After fulfilling functional requirements, non-functional requirements may exist, even if not explicitly stated.</p>
+
+<p>For instance, a system that requires high availability means that code might need to cooperate with a fault-tolerance system module.</p>
+
+<p>Malleability is a non-functional requirement that determines business cost of future changes.</p>
+
+<p>And hence, properties (even auto public getters) may be preferred to fields.</p>
+
+<h2 id="how-c-auto-properties-achieve-malleability">How c# auto properties achieve malleability</h2>
+<p>To change retrieval logic for a public field, its not possible to leave the contract unaffected.</p>
+
+<p>This is because we need code to run during field access, which is not possible for fields. But IS for auto getter property.</p>
+
+<p>Stuff accessing it would need to change. And this can lead to a massive mountain of work.</p>
+
+<h2 id="examples-after-auto-property-compilation">Examples (after auto property compilation)</h2>
+<h3 id="example-1-changing-the-value-returned-based-on-state">Example 1: changing the value returned based on state</h3>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+	<span class="k">private</span> <span class="kt">bool</span> <span class="n">_state</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="nf">GetVar</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">_state</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="kt">var</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="k">return</span> <span class="kt">var</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">A</span><span class="p">();</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="nf">GetVar</span><span class="p">());</span>	<span class="c1">// This change must happen in all references</span>
+</code></pre></div></div>
+
+<h3 id="example-2-validating-the-value-and-throwing-if-invalid">Example 2: validating the value and throwing if invalid</h3>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+	<span class="k">private</span> <span class="kt">bool</span> <span class="n">_state</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="nf">GetVar</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">_state</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="kt">var</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="k">throw</span> <span class="k">new</span> <span class="nf">DataException</span><span class="p">(</span><span class="k">nameof</span><span class="p">(</span><span class="n">_state</span><span class="p">));</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">A</span><span class="p">();</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="nf">GetVar</span><span class="p">());</span>	<span class="c1">// This change must happen in all references</span>
+</code></pre></div></div>
+
+<h2 id="above-examples-with-properties">Above examples with properties</h2>
+<p>With the contract unchanged, less code needs to change (yay)</p>
+
+<p>Again, the below examples are post compilation of auto properties.</p>
+
+<h3 id="example-1-changing-the-value-returned-based-on-state-1">Example 1: changing the value returned based on state</h3>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+	<span class="k">private</span> <span class="kt">bool</span> <span class="n">_state</span><span class="p">;</span>
+	<span class="k">private</span> <span class="kt">int</span> <span class="n">_var</span><span class="p">;</span>
+	
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Var</span>
+	<span class="p">{</span>
+		<span class="k">get</span>
+		<span class="p">{</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">_state</span><span class="p">)</span> <span class="p">{</span>
+				<span class="k">return</span> <span class="kt">var</span><span class="p">;</span>
+			<span class="p">}</span>
+			<span class="k">return</span> <span class="kt">var</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">A</span><span class="p">();</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">Var</span><span class="p">);</span>	<span class="c1">// No changes, yay</span>
+</code></pre></div></div>
+
+<h3 id="example-2-validating-the-value-and-throwing-if-invalid-1">Example 2: validating the value and throwing if invalid</h3>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+	<span class="k">private</span> <span class="kt">bool</span> <span class="n">_state</span><span class="p">;</span>
+	<span class="k">private</span> <span class="kt">int</span> <span class="n">_var</span><span class="p">;</span>
+	
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Var</span>
+	<span class="p">{</span>
+		<span class="k">get</span>
+		<span class="p">{</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">_state</span><span class="p">)</span> <span class="p">{</span>
+				<span class="k">return</span> <span class="kt">var</span><span class="p">;</span>
+			<span class="p">}</span>
+			<span class="k">throw</span> <span class="k">new</span> <span class="nf">DataException</span><span class="p">(</span><span class="k">nameof</span><span class="p">(</span><span class="n">_state</span><span class="p">));</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">A</span><span class="p">();</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">Var</span><span class="p">);</span>	<span class="c1">// No changes, yay</span>
+</code></pre></div></div>
+
+<h2 id="so-are-auto-property-getters-code-smell-compared-to-public-fields">So are auto property getters code smell compared to public fields?</h2>
+<p>Nope. Even though there are no immediate benefits, code always changes, driven by a business need to change requirements to beat competitors.</p>
+
+<p>Since the driving force behind it is a necessity for the business (to survive), it should always be assumed that code WILL change.</p>
+
+<p>And since writing the couple extra characters to implement auto properties is financially cheap for a business, i think its naive to think that public auto properties are “code smell” in all scenarios.</p>
+
+  </div><a class="u-url" href="/2019/08/02/public-vs-field-contracts.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

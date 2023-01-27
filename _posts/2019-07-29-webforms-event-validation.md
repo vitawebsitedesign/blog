@@ -2,6 +2,7 @@
 title: Working around WebForms Event Validation
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 WebForms Event Validation feature means that the form will only postback if the controls havent been tampered with (e.g.: someone setting malicious input via JavaScript).
 

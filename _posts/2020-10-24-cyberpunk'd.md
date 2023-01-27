@@ -2,6 +2,7 @@
 title: Cyberpunk'd
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 [CD Projekt Red](https://en.cdprojektred.com) is releasing a new product on 19th November - [Cyberpunk 2077](https://en.wikipedia.org/wiki/Cyberpunk_2077). Additionally, their primary marketing will be coming in November:

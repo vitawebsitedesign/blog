@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maximizing HashSet bucket distribution efficiency | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Maximizing HashSet bucket distribution efficiency" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The .NET HashSet operates around the idea of “buckets”. The distribution of these buckets is affected by Object.GetHashCode, which generates hash codes for items." />
+<meta property="og:description" content="The .NET HashSet operates around the idea of “buckets”. The distribution of these buckets is affected by Object.GetHashCode, which generates hash codes for items." />
+<link rel="canonical" href="http://localhost:4000/2019/11/29/maximizing-hashset-bucket-distribution-efficiency.html" />
+<meta property="og:url" content="http://localhost:4000/2019/11/29/maximizing-hashset-bucket-distribution-efficiency.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-11-29T00:00:00+11:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Maximizing HashSet bucket distribution efficiency" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-11-29T00:00:00+11:00","datePublished":"2019-11-29T00:00:00+11:00","description":"The .NET HashSet operates around the idea of “buckets”. The distribution of these buckets is affected by Object.GetHashCode, which generates hash codes for items.","headline":"Maximizing HashSet bucket distribution efficiency","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/11/29/maximizing-hashset-bucket-distribution-efficiency.html"},"url":"http://localhost:4000/2019/11/29/maximizing-hashset-bucket-distribution-efficiency.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#set-hashing">Set hashing</a></li>
+<li class="toc-entry toc-h1"><a href="#how-are-hashsets-used">How are HashSets used?</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#objectequals--objectgethashcode">Object.Equals &amp; Object.GetHashCode</a></li>
+<li class="toc-entry toc-h2"><a href="#iequatableequals">IEquatable.Equals</a></li>
+<li class="toc-entry toc-h2"><a href="#putting-it-all-together">Putting it all together</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#consequences-of-incorrect-overrides">Consequences of incorrect overrides</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#incorrectly-implementing-objectgethashcode">Incorrectly implementing Object.GetHashCode</a></li>
+<li class="toc-entry toc-h2"><a href="#incorrectly-implementing-objectequalsiequatableequals">Incorrectly implementing Object.Equals/IEquatable.Equals</a></li>
+<li class="toc-entry toc-h2"><a href="#what-have-we-learned-so-far">What have we learned so far?</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#lesson-1-an-equals-implementation-with-999-correctness-is-not-enough">Lesson 1: An Equals implementation with 99.9% correctness is not enough!</a></li>
+<li class="toc-entry toc-h3"><a href="#lesson-2-never-base-gethashcode-on-your-equals-implementation">Lesson 2: never base GetHashCode on your Equals implementation</a></li>
+<li class="toc-entry toc-h3"><a href="#lesson-3-ensure-bucket-distribution-is-efficient">Lesson 3: ensure bucket distribution is efficient</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#bucket-distribution-efficiency">Bucket distribution efficiency</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#case-1-basic-xor">Case 1: Basic XOR</a></li>
+<li class="toc-entry toc-h2"><a href="#case-2-xor-with-co-primes-multiplication-and-overflow-suppression">Case 2: XOR with co-primes, multiplication and overflow suppression</a></li>
+<li class="toc-entry toc-h2"><a href="#case-3-using-sum-in-place-of-xor">Case 3: using SUM in-place of XOR</a></li>
+<li class="toc-entry toc-h2"><a href="#case-4-multiplying-with-larger-values">Case 4: multiplying with larger values</a></li>
+<li class="toc-entry toc-h2"><a href="#case-5-tailored-gethashcode">Case 5: tailored GetHashCode</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#closing-notes">Closing notes</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Maximizing HashSet bucket distribution efficiency</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-11-29T00:00:00+11:00" itemprop="datePublished">
+        Nov 29, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>The .NET HashSet operates around the idea of “buckets”. The distribution of these buckets is affected by <code class="language-plaintext highlighter-rouge">Object.GetHashCode</code>, which generates hash codes for items.</p>
+
+<p>In short, the hashing mechanism you use affects how objects get distributed into a hashset’s buckets, and this affects lookup efficiency. I feel that this fact isnt given enough emphasis in todays world, so this blog post runs through this.</p>
+
+<p>Explaining bucket distribution efficiency requires an understanding of how HashSets work with user-defined objects. So this post will look at:</p>
+
+<ul>
+  <li>The role that hashing plays in sets</li>
+  <li>How to use user-defined objects with <a href="https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs">HashSet</a></li>
+  <li>Incorrect implementations of the various equality functions that “break” .NET Core’s <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;</code></li>
+  <li>Correcting these implementations</li>
+  <li>The bucket distribution efficiency of various implementations recommended by the internet</li>
+</ul>
+
+<h1 id="set-hashing">Set hashing</h1>
+<p>In the context of sets (i.e.: hash tables), hashing gives devs an option to trade memory for performance &amp; efficiency. This allows lookup operations that search <code class="language-plaintext highlighter-rouge">Sets</code> much quicker by leveraging the index operator.</p>
+
+<p>The code examples that follow use <a href="https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs">System.Collections.Generic.HashSet</a> as an example collection, which implements <code class="language-plaintext highlighter-rouge">ISet&lt;T&gt;</code>.</p>
+
+<h1 id="how-are-hashsets-used">How are HashSets used?</h1>
+<p>The HashSet generic collection is often used to store user-defined objects. E.g.:</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">MyObject1</span>
+<span class="p">{</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Val</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+
+	<span class="k">public</span> <span class="nf">MyObject1</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">val</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="n">Id</span> <span class="p">=</span> <span class="n">id</span><span class="p">;</span>
+		<span class="n">Val</span> <span class="p">=</span> <span class="n">val</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><a href="https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L231">HashSet.Add</a> uses various methods to figure out where to place the object in the hashset. These methods include (&amp; are not limited to):</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Object.Equals</code></li>
+  <li><code class="language-plaintext highlighter-rouge">Object.GetHashCode</code></li>
+  <li><code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code></li>
+</ul>
+
+<p>User-defined objects need to implement the above 3 functions to maximize lookup efficiency in <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;</code>. Sometimes i see StackOverflow posts missing 1 of these 3, which is a huge kick in the nuts. If you are using modern .NET &amp; C# 2+, you should always implement all 3 to get the most bang for your buck.</p>
+
+<p>Lets run through the first 2 now!</p>
+
+<h2 id="objectequals--objectgethashcode">Object.Equals &amp; Object.GetHashCode</h2>
+<p>Both of these methods are implemented in <a href="https://source.dot.net/#System.Private.CoreLib/Object.cs,d9262ceecc1719ab">Object</a>, &amp; are used to check equality (i’ll come back to this fact later).</p>
+
+<p>When making our own classes, we should override both of these <strong>non-generic functions</strong>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">Equals</code> is for normal equality stuff, whilst <code class="language-plaintext highlighter-rouge">GetHashCode</code> is used to determine which bucket the object should be in (i.e.: which “nested list” the object is in).</p>
+
+<p>With 2/3 functions defined, lets run through the 3rd function: <code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code>.</p>
+
+<h2 id="iequatableequals">IEquatable<T>.Equals</T></h2>
+<p><code class="language-plaintext highlighter-rouge">Object.Equals</code> is a non-generic function. With modern .NET &amp; C# 2+, we can now use generic functions.</p>
+
+<p>With this luxury, we should also implement the generic version of <code class="language-plaintext highlighter-rouge">Object.Equals</code> too, which is <code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code>.</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">MyObject1</span> <span class="p">:</span> <span class="n">IEquatable</span><span class="p">&lt;</span><span class="n">MyObject1</span><span class="p">&gt;</span>
+<span class="p">{</span>
+	<span class="p">...</span>
+
+	<span class="k">public</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">MyObject1</span> <span class="n">other</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="p">...</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Benefits:</p>
+<ul>
+  <li>it allows .NET to <a href="https://github.com/microsoft/referencesource/blob/master/System.Core/System/Collections/Generic/HashSet.cs#L398">internally find our equal comparison logic</a> more easily. In short, less <a href="https://en.wikipedia.org/wiki/Common_Intermediate_Language">CIL</a></li>
+  <li>objects implementing an interface can often be substitued with similar objects implementing that interface (for functions accepting that interface). This tranlates into more malleable code via <a href="https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance">covariance &amp; contravariance</a>.</li>
+  <li>less <a href="https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/types/boxing-and-unboxing">boxing</a>. Again, this blog post concerns efficiency, which makes boxing is a big-enough factor to consider.</li>
+</ul>
+
+<p>So far, we’ve run through the definitions for:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Object.Equals</code></li>
+  <li><code class="language-plaintext highlighter-rouge">Object.GetHashCode</code></li>
+  <li><code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code></li>
+</ul>
+
+<p>I’ve only given definitions so far - i will now reveal basic implementation details for these.</p>
+
+<h2 id="putting-it-all-together">Putting it all together</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">MyObject1</span> <span class="p">:</span> <span class="n">IEquatable</span><span class="p">&lt;</span><span class="n">MyObject1</span><span class="p">&gt;</span>
+<span class="p">{</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Val</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+
+	<span class="k">public</span> <span class="nf">MyObject1</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">val</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="n">Id</span> <span class="p">=</span> <span class="n">id</span><span class="p">;</span>
+		<span class="n">Val</span> <span class="p">=</span> <span class="n">val</span><span class="p">;</span>
+	<span class="p">}</span>
+
+	<span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="k">return</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">obj</span> <span class="k">as</span> <span class="n">MyObject1</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="k">public</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">MyObject1</span> <span class="n">other</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">other</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+			<span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+		<span class="k">return</span> <span class="n">Val</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">Val</span><span class="p">;</span>
+	<span class="p">}</span>
+
+	<span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">return</span> <span class="n">Id</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Tihs will do for now. Our code above <em>can</em> work, but has many problems.</p>
+
+<h1 id="consequences-of-incorrect-overrides">Consequences of incorrect overrides</h1>
+<p>.NET Core is smart but if you implement <code class="language-plaintext highlighter-rouge">Object.Equals</code> or <code class="language-plaintext highlighter-rouge">Object.GetHashCode</code> incorrectly, .NET Core won’t function as expected. The .NET developers have given you the power to provide your own implementation, but with great power comes great responsibility.</p>
+
+<p>For instance, lets check out the <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;.Contains</code> .NET Core implementation:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Contains</span><span class="p">(</span><span class="n">T</span> <span class="n">item</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">buckets</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="p">...</span>
+      <span class="n">IEqualityComparer</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;?</span> <span class="n">comparer</span> <span class="p">=</span> <span class="n">_comparer</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">comparer</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="p">...</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+          <span class="kt">int</span> <span class="n">hashCode</span> <span class="p">=</span> <span class="n">item</span> <span class="p">==</span> <span class="k">null</span> <span class="p">?</span> <span class="m">0</span> <span class="p">:</span> <span class="nf">InternalGetHashCode</span><span class="p">(</span><span class="n">comparer</span><span class="p">.</span><span class="nf">GetHashCode</span><span class="p">(</span><span class="n">item</span><span class="p">));</span>
+          <span class="p">...</span>
+          <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="p">=</span> <span class="n">buckets</span><span class="p">[</span><span class="n">hashCode</span> <span class="p">%</span> <span class="n">buckets</span><span class="p">.</span><span class="n">Length</span><span class="p">]</span> <span class="p">-</span> <span class="m">1</span><span class="p">;</span> <span class="n">i</span> <span class="p">&gt;=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">=</span> <span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">next</span><span class="p">)</span>
+          <span class="p">{</span>
+              <span class="k">if</span> <span class="p">(</span><span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">hashCode</span> <span class="p">==</span> <span class="n">hashCode</span> <span class="p">&amp;&amp;</span> <span class="n">comparer</span><span class="p">.</span><span class="nf">Equals</span><span class="p">(</span><span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="k">value</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span>
+              <span class="p">{</span>
+                  <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+              <span class="p">}</span>
+              <span class="p">...</span>
+          <span class="p">}</span>
+      <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="p">...</span>
+  <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Pay attention to the <code class="language-plaintext highlighter-rouge">IF</code> condition in the for-loop. If we implemented <code class="language-plaintext highlighter-rouge">Equals</code> correctly but <code class="language-plaintext highlighter-rouge">GetHashCode</code> incorrectly, .NET Core’s <code class="language-plaintext highlighter-rouge">HashSet.Add</code> &amp; <code class="language-plaintext highlighter-rouge">HashSet.Contains</code> begin to operate in unpredictable ways.</p>
+
+<h2 id="incorrectly-implementing-objectgethashcode">Incorrectly implementing Object.GetHashCode</h2>
+<p>Lets take our example class <code class="language-plaintext highlighter-rouge">MyObject</code>. Let’s say we add a <code class="language-plaintext highlighter-rouge">Val</code> to a hashset:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="k">set</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HashSet</span><span class="p">&lt;</span><span class="n">MyObject</span><span class="p">&gt;;</span>
+
+<span class="kt">var</span> <span class="n">obj1</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MyObject</span><span class="p">(</span><span class="n">Id</span><span class="p">:</span> <span class="m">1</span><span class="p">,</span> <span class="n">Val</span><span class="p">:</span> <span class="m">1</span><span class="p">);</span>
+<span class="k">set</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">obj1</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Sets only contain Unique values. So if we try to add another object with the same <code class="language-plaintext highlighter-rouge">Val</code>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">obj2</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MyObject</span><span class="p">(</span><span class="n">Id</span><span class="p">:</span> <span class="m">2</span><span class="p">,</span> <span class="n">Val</span><span class="p">:</span> <span class="m">1</span><span class="p">);</span>
+<span class="k">set</span><span class="p">.</span><span class="nf">Contains</span><span class="p">(</span><span class="n">obj2</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>It can still be added if we make <code class="language-plaintext highlighter-rouge">GetHashCode</code> return <code class="language-plaintext highlighter-rouge">Id</code>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">MyObject2</span> <span class="p">:</span> <span class="n">IEquatable</span><span class="p">&lt;</span><span class="n">MyObject2</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="kt">int</span> <span class="n">Val</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="p">...</span>
+
+    <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">Id</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Because if we look at the .NET Core source (posted earlier on), the hash code of the 1st object is 1, and the 2nd object hash is 2. So .NET will search for bucket 2 and see that nothing exists in that nested list and will think it doesnt exist in the set yet:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="n">hashCode</span> <span class="p">=</span> <span class="n">item</span> <span class="p">==</span> <span class="k">null</span> <span class="p">?</span> <span class="m">0</span> <span class="p">:</span> <span class="nf">InternalGetHashCode</span><span class="p">(</span><span class="n">comparer</span><span class="p">.</span><span class="nf">GetHashCode</span><span class="p">(</span><span class="n">item</span><span class="p">));</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="p">=</span> <span class="n">buckets</span><span class="p">[</span><span class="n">hashCode</span> <span class="p">%</span> <span class="n">buckets</span><span class="p">.</span><span class="n">Length</span><span class="p">]</span> <span class="p">-</span> <span class="m">1</span><span class="p">;</span> <span class="n">i</span> <span class="p">&gt;=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">=</span> <span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">next</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">hashCode</span> <span class="p">==</span> <span class="n">hashCode</span> <span class="p">&amp;&amp;</span> <span class="n">comparer</span><span class="p">.</span><span class="nf">Equals</span><span class="p">(</span><span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="k">value</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span>
+	<span class="p">{</span>
+		<span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+	<span class="p">}</span>
+	<span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Specifically, the <code class="language-plaintext highlighter-rouge">slots[i].hashCode == hashCode</code> bit will return false and this makes <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;.Contains</code> return <code class="language-plaintext highlighter-rouge">false</code>.</p>
+
+<p>By incorrectly implementing <code class="language-plaintext highlighter-rouge">GetHashCode</code>, we’ve just caused a hard-to-detect bug and made <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;.Add</code> a more leaky abstraction. You may think that incorrect implementations are hard to do, but a dev may not remember to update the method after altering a user-defined classes fields/properties.</p>
+
+<h2 id="incorrectly-implementing-objectequalsiequatableequals">Incorrectly implementing Object.Equals/IEquatable.Equals</h2>
+<p>The same thing can be said for <code class="language-plaintext highlighter-rouge">Equals</code>. Lets say we make it return <code class="language-plaintext highlighter-rouge">Id</code>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">MyObject2</span> <span class="p">:</span> <span class="n">IEquatable</span><span class="p">&lt;</span><span class="n">MyObject2</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="kt">int</span> <span class="n">Val</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="p">...</span>
+
+    <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">obj</span> <span class="k">as</span> <span class="n">MyObject2</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">MyObject2</span> <span class="n">other</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">other</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+        <span class="k">return</span> <span class="n">Id</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">Id</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">Val</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Then we add 2 objects with different ID’s (with the same <code class="language-plaintext highlighter-rouge">Val</code>) into 1 <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;</code> bucket:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="k">set</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HashSet</span><span class="p">&lt;</span><span class="n">MyObject</span><span class="p">&gt;;</span>
+
+<span class="kt">var</span> <span class="n">obj1</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MyObject</span><span class="p">(</span><span class="n">Id</span><span class="p">:</span> <span class="m">1</span><span class="p">,</span> <span class="n">Val</span><span class="p">:</span> <span class="m">1</span><span class="p">);</span>
+<span class="k">set</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">obj1</span><span class="p">);</span>
+
+<span class="kt">var</span> <span class="n">obj2</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MyObject</span><span class="p">(</span><span class="n">Id</span><span class="p">:</span> <span class="m">2</span><span class="p">,</span> <span class="n">Val</span><span class="p">:</span> <span class="m">1</span><span class="p">);</span>
+<span class="k">set</span><span class="p">.</span><span class="nf">Contains</span><span class="p">(</span><span class="n">obj2</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">Contains</code> call will return false, because even though they’re now in the same bucket (<code class="language-plaintext highlighter-rouge">Val</code>), they have different <code class="language-plaintext highlighter-rouge">Id</code>. This can cause all sorts of problems, mainly by “breaking” .NET Core’s implementation of <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;.Contains</code>.</p>
+
+<p>Specifically, the <code class="language-plaintext highlighter-rouge">comparer.Equals(slots[i].value, item)</code> segment will return false.</p>
+
+<h2 id="what-have-we-learned-so-far">What have we learned so far?</h2>
+<h3 id="lesson-1-an-equals-implementation-with-999-correctness-is-not-enough">Lesson 1: An Equals implementation with 99.9% correctness is not enough!</h3>
+<p>If we screw up <code class="language-plaintext highlighter-rouge">Equals</code>, even if its only 99.9% correct (e.g.: you check all class properties/fields except 1), you’ll cause a massive problem down the line. A colleague is gonna hit you on the back of the head.</p>
+
+<p>Look - <code class="language-plaintext highlighter-rouge">GetHashCode</code> just acts as a bucket ID generator. Theres nothing magical about it. So make sure GetHashCode is fast, &amp; that your <code class="language-plaintext highlighter-rouge">Equals</code> implementation prioritizes correctness over speed.</p>
+
+<p>Its usually a good idea to make <code class="language-plaintext highlighter-rouge">GetHashCode</code> generate an int based on ALL fields/properties.</p>
+
+<h3 id="lesson-2-never-base-gethashcode-on-your-equals-implementation">Lesson 2: never base GetHashCode on your Equals implementation</h3>
+<p>Some developers seem to implement <code class="language-plaintext highlighter-rouge">Object.Equals</code> &amp; <code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code> by using <code class="language-plaintext highlighter-rouge">Object.GetHashCode</code>. E.g.:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">obj</span> <span class="k">as</span> <span class="n">MyObject</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">public</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">MyObject</span> <span class="n">other</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">other</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nf">GetHashCode</span><span class="p">()</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="nf">GetHashCode</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This is a huge problem. Good implementations of <code class="language-plaintext highlighter-rouge">GetHashCode</code> leverage <code class="language-plaintext highlighter-rouge">int</code> overflow supressing via <code class="language-plaintext highlighter-rouge">unchecked</code> and large multiplication operations to maximize the range of hash IDs the function can generate.</p>
+
+<p>This means that 2 objects that may <strong>not</strong> be equal, may have the same hash code. Basically what im saying is this:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">hash1</span> <span class="p">=</span> <span class="kt">int</span><span class="p">.</span><span class="n">MaxValue</span><span class="p">;</span>
+<span class="kt">var</span> <span class="n">hash2</span> <span class="p">=</span> <span class="kt">int</span><span class="p">.</span><span class="n">MinValue</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">bool</span> <span class="n">isEqual</span> <span class="p">=</span> <span class="n">hash1</span> <span class="p">==</span> <span class="n">hash2</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>So when you base <code class="language-plaintext highlighter-rouge">Equals</code> on <code class="language-plaintext highlighter-rouge">GetHashCode</code>, you could have 2 <strong>INequal</strong> objects that get put into the same bucket, &amp; get detected as equalvalent. Youre gonna be in a for a massive headache when trying to debug these kinds of issues in prod.</p>
+
+<p>If you ever do this, just book a vacation in advance because your gonna need it.</p>
+
+<p>As said before, <code class="language-plaintext highlighter-rouge">Object.Equals</code> &amp; <code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code> need to have 100% correctness - never EVER sacrifice even 0.00001% correctness for a slightly faster math operation. Leave the speed to your <code class="language-plaintext highlighter-rouge">Object.GetHashCode</code> override.</p>
+
+<h3 id="lesson-3-ensure-bucket-distribution-is-efficient">Lesson 3: ensure bucket distribution is efficient</h3>
+<p>What happens if you have 1000 buckets, but only 3 buckets contain 2000 items each? This leaves 997 buckets unused.</p>
+
+<p><code class="language-plaintext highlighter-rouge">HashSet</code> lookups use the hash code to quickly jump to a bucket, and then use <code class="language-plaintext highlighter-rouge">Equals</code> to compare each object in that bucket sequentually. Since <code class="language-plaintext highlighter-rouge">Equals</code> is <code class="language-plaintext highlighter-rouge">O(n)</code> (compared to the hash lookup of roughly <code class="language-plaintext highlighter-rouge">O(1)</code>),  by definition, it is not scalable for large N.</p>
+
+<p>If we use an inferior <code class="language-plaintext highlighter-rouge">GetHashCode</code> implementation, we get this situation where lookups become slow in hashsets. Its a paradox, i know. Thankfully, the following sections will help you avoid this sticky situation.</p>
+
+<h1 id="bucket-distribution-efficiency">Bucket distribution efficiency</h1>
+<p>Now that all that is out of way, lets jump into bucket distribution efficiency! This all depends on the implementation we choose for <code class="language-plaintext highlighter-rouge">GetHashCode</code>.</p>
+
+<p>We will start with the worst implementations, which are often <a href="https://stackoverflow.com/a/9828186">prominent</a> in <a href="https://stackoverflow.com/a/70375">StackOverflow threads</a>. Then we will keep improving our implementation until we get a nice juicy gooey efficient bucket distribution.</p>
+
+<p>The below examples use a specific hashset to test bucket distribution, which is generated using:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="k">set</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HashSet</span><span class="p">&lt;</span><span class="n">MyObject4</span><span class="p">&gt;();</span>
+<span class="kt">var</span> <span class="n">limit</span> <span class="p">=</span> <span class="m">5</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">a</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">a</span><span class="p">++)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">b</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">b</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">b</span><span class="p">++)</span>
+    <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">c</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">c</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">c</span><span class="p">++)</span>
+        <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">d</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">d</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">d</span><span class="p">++)</span>
+            <span class="p">{</span>
+                <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">e</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">e</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">e</span><span class="p">++)</span>
+                <span class="p">{</span>
+                    <span class="k">set</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="k">new</span> <span class="nf">MyObject4</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">e</span><span class="p">));</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This generated data will allow us to test permutations &amp; combinations of hashes.</p>
+
+<p>Additionally, we will use a user-defined class containing 5 properties, and the same <code class="language-plaintext highlighter-rouge">Equals</code> override for our examples:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">obj</span> <span class="k">as</span> <span class="n">MyObject4</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">public</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="n">MyObject4</span> <span class="n">other</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">other</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">A</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">A</span>
+        <span class="p">&amp;&amp;</span> <span class="n">B</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">B</span>
+        <span class="p">&amp;&amp;</span> <span class="n">C</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">C</span>
+        <span class="p">&amp;&amp;</span> <span class="n">D</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">D</span>
+        <span class="p">&amp;&amp;</span> <span class="n">E</span> <span class="p">==</span> <span class="n">other</span><span class="p">.</span><span class="n">E</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Lets get biz-a.</p>
+
+<h2 id="case-1-basic-xor">Case 1: Basic XOR</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">A</span> <span class="p">^</span> <span class="n">B</span> <span class="p">^</span> <span class="n">C</span> <span class="p">^</span> <span class="n">D</span> <span class="p">^</span> <span class="n">E</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This is the rice-and-beans staple of the HashSet world. To identify the problems with this, we need to know what <code class="language-plaintext highlighter-rouge">XOR</code> does.</p>
+
+<p>The <a href="https://hackernoon.com/xor-the-magical-bit-wise-operator-24d3012ed821">exclusive-or operator</a> (XOR) just smooshes 2 bit sequences together to generate another bit sequence. When only one of the bits is 1, then 1 is generated else 0. E.g.:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>01010011
+11110001
+</code></pre></div></div>
+<p>becomes</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10100010
+</code></pre></div></div>
+
+<p>The reason this is a bad <code class="language-plaintext highlighter-rouge">GetHashCode()</code> implementation is because different <a href="https://en.wikipedia.org/wiki/Combination">combinations</a> still produce the same bit sequence. In other words, different <a href="https://en.wikipedia.org/wiki/Permutation">permutations</a> of the same combination just give the same hash result.</p>
+
+<p>For instance, reversing the bit sequence order in our previous example produces the same end-result:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>11110001
+01010011
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10100010
+</code></pre></div></div>
+
+<p>So when you do a XOR for all the class properties, you get a biased distribution for similar value permutations. An example of this in C# is:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyObject</span> <span class="p">{</span> <span class="n">PropertyA</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">PropertyB</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">PropertyC</span> <span class="p">=</span> <span class="m">3</span> <span class="p">};</span>
+<span class="kt">var</span> <span class="n">b</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyObject</span> <span class="p">{</span> <span class="n">PropertyA</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">PropertyB</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">PropertyC</span> <span class="p">=</span> <span class="m">1</span> <span class="p">};</span>
+<span class="kt">var</span> <span class="n">c</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyObject</span> <span class="p">{</span> <span class="n">PropertyA</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">PropertyB</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">PropertyC</span> <span class="p">=</span> <span class="m">2</span> <span class="p">};</span>
+<span class="kt">var</span> <span class="n">d</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyObject</span> <span class="p">{</span> <span class="n">PropertyA</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">PropertyB</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">PropertyC</span> <span class="p">=</span> <span class="m">3</span> <span class="p">};</span>
+</code></pre></div></div>
+
+<p>And guess what - since we are benchmarking efficiency we want to test the worst case. And this situation is pretty much the worst case! Running our hashset with this <code class="language-plaintext highlighter-rouge">GetHashCode</code> XOR implementation gives us some intersting statistics:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Total buckets</th>
+      <th>Buckets occupied</th>
+      <th>% buckets occupied</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4049</td>
+      <td>8</td>
+      <td>0.1976%</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Damn son! Not even 1%! Visualized as radar chart:</p>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-1.png" alt="case 1 bucket distribution" /></p>
+
+<p>See all that blue? Those lines represent a used bucket. See all that grey? Thats what shame looks like.</p>
+
+<p>This is a very disturbing situation with many unused buckets. I don’t wanna look at this circle anymore, so lets start improving our <code class="language-plaintext highlighter-rouge">GetHashCode</code> implementation.</p>
+
+<h2 id="case-2-xor-with-co-primes-multiplication-and-overflow-suppression">Case 2: XOR with co-primes, multiplication and overflow suppression</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">unchecked</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">prime</span> <span class="p">=</span> <span class="m">23</span><span class="p">;</span>
+        <span class="kt">var</span> <span class="n">hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">A</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">^</span> <span class="p">(</span><span class="n">B</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">^</span> <span class="p">(</span><span class="n">C</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">^</span> <span class="p">(</span><span class="n">D</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">^</span> <span class="p">(</span><span class="n">E</span> <span class="p">*</span> <span class="n">prime</span><span class="p">);</span>
+        <span class="k">return</span> <span class="m">17</span> <span class="p">+</span> <span class="n">hash</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The improvements in this variant are:</p>
+
+<ul>
+  <li>The <code class="language-plaintext highlighter-rouge">unchecked</code> block, which ensures integer overflows are suppressed. This means large values “wrap around”.</li>
+  <li>Multiplying the class properties. This causes larger numbers.</li>
+  <li>Usage of co-prime numbers. Co-prime numbers means there is a lower chance of the multiplication operations producing the same result for similar combinations of field/property values.</li>
+  <li>Setting a minimum for the hash. If a property is 0, we won’t get a bias towards the 0<sup>th</sup> bucket</li>
+</ul>
+
+<p>All 3 factors give us a much larger range of generated bucket hash IDs, &amp; this translates into <em>wider</em> bucket distribution with the <strong>same</strong> efficiency:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Total buckets</th>
+      <th>Buckets occupied</th>
+      <th>% buckets occupied</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4049</td>
+      <td>8</td>
+      <td>0.1976%</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-2.png" alt="case 2 bucket distribution" /></p>
+
+<p>Ok, so maybe that wasnt a mind-blowing move. In fact, we cant really see the wider bucket distribution on a radar chart. HOWEVER these improvements will form the foundation for building an optimum <code class="language-plaintext highlighter-rouge">Object.GetHashCode</code> implementation.</p>
+
+<p>We are still sufferring from <code class="language-plaintext highlighter-rouge">XOR</code> producing the same hash code for property value combinations. We need to throw <code class="language-plaintext highlighter-rouge">XOR</code> out the window immediately.</p>
+
+<h2 id="case-3-using-sum-in-place-of-xor">Case 3: using SUM in-place of XOR</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">unchecked</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">prime</span> <span class="p">=</span> <span class="m">23</span><span class="p">;</span>
+        <span class="kt">var</span> <span class="n">hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">A</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">+</span> <span class="p">(</span><span class="n">B</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">+</span> <span class="p">(</span><span class="n">C</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">+</span> <span class="p">(</span><span class="n">D</span> <span class="p">*</span> <span class="n">prime</span><span class="p">)</span>
+            <span class="p">+</span> <span class="p">(</span><span class="n">E</span> <span class="p">*</span> <span class="n">prime</span><span class="p">);</span>
+        <span class="k">return</span> <span class="m">17</span> <span class="p">+</span> <span class="n">hash</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>We only replaced <code class="language-plaintext highlighter-rouge">XOR</code> with <code class="language-plaintext highlighter-rouge">+</code>, but look at the difference!</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Total buckets</th>
+      <th>Buckets occupied</th>
+      <th>% buckets occupied</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4049</td>
+      <td>21</td>
+      <td>0.5186%</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>What a kick - woohoo! A 0.3% improvement. We are finally getting somewhere!!</p>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-3.png" alt="case 3 bucket distribution" /></p>
+
+<p>Now all those property/field value combinations give different bits. And now, we will leverage the foundations from case #2 &amp; #3 to kick it up a notch!</p>
+
+<h2 id="case-4-multiplying-with-larger-values">Case 4: multiplying with larger values</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">unchecked</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="kt">int</span> <span class="n">prime</span> <span class="p">=</span> <span class="m">10007</span><span class="p">;</span>
+
+        <span class="kt">var</span> <span class="n">hash</span> <span class="p">=</span> <span class="m">17</span><span class="p">;</span>
+        <span class="n">hash</span> <span class="p">=</span> <span class="n">hash</span> <span class="p">*</span> <span class="n">prime</span> <span class="p">+</span> <span class="n">A</span><span class="p">;</span>
+        <span class="n">hash</span> <span class="p">=</span> <span class="n">hash</span> <span class="p">*</span> <span class="n">prime</span> <span class="p">+</span> <span class="n">B</span><span class="p">;</span>
+        <span class="n">hash</span> <span class="p">=</span> <span class="n">hash</span> <span class="p">*</span> <span class="n">prime</span> <span class="p">+</span> <span class="n">C</span><span class="p">;</span>
+        <span class="n">hash</span> <span class="p">=</span> <span class="n">hash</span> <span class="p">*</span> <span class="n">prime</span> <span class="p">+</span> <span class="n">D</span><span class="p">;</span>
+        <span class="n">hash</span> <span class="p">=</span> <span class="n">hash</span> <span class="p">*</span> <span class="n">prime</span> <span class="p">+</span> <span class="n">E</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">hash</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>By multiplying by larger values (&amp; supressing overflows via <code class="language-plaintext highlighter-rouge">unchecked</code>), <code class="language-plaintext highlighter-rouge">GetHashCode()</code> will generate hash IDs within a larger range. Since we are basically benchmarking here, we care about the worst case, and in most realistic scenarios we could have very large amounts of data to put in our set.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Total buckets</th>
+      <th>Buckets occupied</th>
+      <th>% buckets occupied</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4049</td>
+      <td>1950</td>
+      <td>48.1600%</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-4.png" alt="case 4 bucket distribution" /></p>
+
+<p>Look at that efficient distribution!</p>
+
+<p>This variant is essentially the implementation <a href="https://stackoverflow.com/a/263416">recommended by Jon Skeet</a>, and is superior to the XOR variant when using large HashSets.</p>
+
+<p>Use this, honestly its gold. GOLD I SAY!</p>
+
+<h2 id="case-5-tailored-gethashcode">Case 5: tailored GetHashCode</h2>
+<p>Case 4 is great - like, <em>really</em> great.</p>
+
+<p>But if YOU know YOUR exact scenario, and the exact data being put into your HashSet, you have a special opportunity where its possible to write a <code class="language-plaintext highlighter-rouge">GetHashCode</code> implementation tailored to your specific data to maximize your bucket distribution efficiency.</p>
+
+<p>Lets take our example from before. The data we generate is very specific:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="k">set</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HashSet</span><span class="p">&lt;</span><span class="n">MyObject4</span><span class="p">&gt;();</span>
+<span class="kt">var</span> <span class="n">limit</span> <span class="p">=</span> <span class="m">5</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">a</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">a</span><span class="p">++)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">b</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">b</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">b</span><span class="p">++)</span>
+    <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">c</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">c</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">c</span><span class="p">++)</span>
+        <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">d</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">d</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">d</span><span class="p">++)</span>
+            <span class="p">{</span>
+                <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">e</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">e</span> <span class="p">&lt;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">e</span><span class="p">++)</span>
+                <span class="p">{</span>
+                    <span class="k">set</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="k">new</span> <span class="nf">MyObject4</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">e</span><span class="p">));</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>We KNOW that each object will have a <a href="https://en.wikipedia.org/wiki/Permutation">unique property value permutation</a>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">unchecked</span>
+    <span class="p">{</span>
+        <span class="kt">var</span> <span class="n">str</span> <span class="p">=</span> <span class="s">$"</span><span class="p">{</span><span class="n">A</span><span class="p">}{</span><span class="n">B</span><span class="p">}{</span><span class="n">C</span><span class="p">}{</span><span class="n">D</span><span class="p">}{</span><span class="n">E</span><span class="p">}</span><span class="s">"</span><span class="p">;</span>
+        <span class="k">return</span> <span class="kt">int</span><span class="p">.</span><span class="nf">Parse</span><span class="p">(</span><span class="n">str</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>For example, the object:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">new</span> <span class="n">MyObject</span>
+<span class="p">{</span>
+    <span class="n">A</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span>
+    <span class="n">B</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span>
+    <span class="n">C</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span>
+    <span class="n">D</span> <span class="p">=</span> <span class="m">4</span><span class="p">,</span>
+    <span class="n">E</span> <span class="p">=</span> <span class="m">5</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>will have hashcode of <code class="language-plaintext highlighter-rouge">12345</code>.</p>
+
+<p>With this knowledge, we can improve our <code class="language-plaintext highlighter-rouge">GetHashCode</code> even more to work better for our specific dataset. And with this new <code class="language-plaintext highlighter-rouge">GetHashCode</code> implementation we get a nice kick:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Total buckets</th>
+      <th>Buckets occupied</th>
+      <th>% buckets occupied</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4049</td>
+      <td>2310</td>
+      <td>56.8288%</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/bucket-distribution-case-5.png" alt="case 5 bucket distribution" /></p>
+
+<p>A better bucket distribution efficiency with an even more <em>consistent</em> distribution. Not bad, not bad at all. :-)</p>
+
+<h1 id="closing-notes">Closing notes</h1>
+<p>Hashsets give faster lookups at the cost of memory.</p>
+
+<p>Developers may sometimes forget to override <code class="language-plaintext highlighter-rouge">IEquatable&lt;T&gt;.Equals</code>, <code class="language-plaintext highlighter-rouge">Object.Equals</code> or <code class="language-plaintext highlighter-rouge">Object.GetHashCode</code>. Whilst all 3 equality functions appear redundant, they are all necessary to maximizing efficiency when working with HashSets.</p>
+
+<p>You need to focus on a good (fast) <code class="language-plaintext highlighter-rouge">GetHashCode</code> implementation for your data situation.</p>
+
+<p>For the vast majority of cases, using <code class="language-plaintext highlighter-rouge">unchecked</code> multiplications with large prime numbers (&amp; summing the result of these operations across all class fields/properties) will give efficient bucket distributions.</p>
+
+<p>Inefficient bucket distributions essentially lead to more <code class="language-plaintext highlighter-rouge">O(n)</code> HashSet operations, which nullifies the whole point of HashSet - super dooper fast lookups.</p>
+
+<p>The beauty of <code class="language-plaintext highlighter-rouge">HashSet&lt;T&gt;</code> can only be utilized through efficient bucket distributions.</p>
+
+  </div><a class="u-url" href="/2019/11/29/maximizing-hashset-bucket-distribution-efficiency.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

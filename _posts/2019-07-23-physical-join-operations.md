@@ -2,6 +2,7 @@
 title: SQL Server Physical Join Operations
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 SQL Server has a logical operation for joining, but has 3 options of achieving the same thing.
 

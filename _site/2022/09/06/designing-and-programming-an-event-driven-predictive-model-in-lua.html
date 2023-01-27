@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Designing and programming an event-driven predictive model in Lua | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Designing and programming an event-driven predictive model in Lua" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This blog post details an 8-month journey in developing predictive math algorithms in WoW &amp; integrating them into the TBC &amp; WeakAura APIs. The WeakAuras integration requires deep knowledge of their API, often requiring experimentation to discover the full extent of their interface due to competing sources of incomplete &amp; outdated documentation." />
+<meta property="og:description" content="This blog post details an 8-month journey in developing predictive math algorithms in WoW &amp; integrating them into the TBC &amp; WeakAura APIs. The WeakAuras integration requires deep knowledge of their API, often requiring experimentation to discover the full extent of their interface due to competing sources of incomplete &amp; outdated documentation." />
+<link rel="canonical" href="http://localhost:4000/2022/09/06/designing-and-programming-an-event-driven-predictive-model-in-lua.html" />
+<meta property="og:url" content="http://localhost:4000/2022/09/06/designing-and-programming-an-event-driven-predictive-model-in-lua.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-09-06T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Designing and programming an event-driven predictive model in Lua" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2022-09-06T00:00:00+10:00","datePublished":"2022-09-06T00:00:00+10:00","description":"This blog post details an 8-month journey in developing predictive math algorithms in WoW &amp; integrating them into the TBC &amp; WeakAura APIs. The WeakAuras integration requires deep knowledge of their API, often requiring experimentation to discover the full extent of their interface due to competing sources of incomplete &amp; outdated documentation.","headline":"Designing and programming an event-driven predictive model in Lua","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/09/06/designing-and-programming-an-event-driven-predictive-model-in-lua.html"},"url":"http://localhost:4000/2022/09/06/designing-and-programming-an-event-driven-predictive-model-in-lua.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#the-problem-to-solve">The problem to solve</a></li>
+<li class="toc-entry toc-h2"><a href="#designing-the-predictive-model">Designing the predictive model</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#example-scenario">Example scenario</a></li>
+<li class="toc-entry toc-h3"><a href="#problem-solved-right">Problem solved? …right?</a></li>
+<li class="toc-entry toc-h3"><a href="#identifying-all-influencing-factors">Identifying all influencing factors</a></li>
+<li class="toc-entry toc-h3"><a href="#expanding-the-equation">Expanding the equation</a></li>
+<li class="toc-entry toc-h3"><a href="#decomposing-the-equation-lhs">Decomposing the equation (LHS)</a></li>
+<li class="toc-entry toc-h3"><a href="#decomposing-the-equation-rhs">Decomposing the equation (RHS)</a></li>
+<li class="toc-entry toc-h3"><a href="#re-composing-the-equation">Re-composing the equation</a></li>
+<li class="toc-entry toc-h3"><a href="#researching-the-additional-constants--run-time-variables">Researching the additional constants &amp; run-time variables</a></li>
+<li class="toc-entry toc-h3"><a href="#solving-the-hasted-cast-time-formula">Solving the hasted cast time formula</a></li>
+<li class="toc-entry toc-h3"><a href="#yay-or-nay">Yay or Nay?</a></li>
+<li class="toc-entry toc-h3"><a href="#implementing-the-math-equation">Implementing the math equation</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#developing-the-pseudocode-and-lua">Developing the pseudocode and Lua</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#get_ideal_chr">get_ideal_chr</a></li>
+<li class="toc-entry toc-h3"><a href="#get_cast_time">get_cast_time</a></li>
+<li class="toc-entry toc-h3"><a href="#get_ttd">get_ttd</a></li>
+<li class="toc-entry toc-h3"><a href="#get_ttd_mana">get_ttd_mana</a></li>
+<li class="toc-entry toc-h3"><a href="#get_mana_pool">get_mana_pool</a></li>
+<li class="toc-entry toc-h3"><a href="#get_mana_from_mp5">get_mana_from_mp5</a></li>
+<li class="toc-entry toc-h3"><a href="#get_mana_from_tide">get_mana_from_tide</a></li>
+<li class="toc-entry toc-h3"><a href="#get_mana_from_ied">get_mana_from_ied</a></li>
+<li class="toc-entry toc-h3"><a href="#get_mana_from_pot">get_mana_from_pot</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#finalities">Finalities</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#triggering-the-lua-code-with-weakauras">Triggering the Lua code with WeakAuras</a></li>
+<li class="toc-entry toc-h3"><a href="#final-lua-code">Final Lua code</a></li>
+<li class="toc-entry toc-h3"><a href="#bonus-statistic-exact-seconds-until-time-to-down-ie-how-far-ahead-or-behind-the-ideal-rank-will-take-us">Bonus statistic: exact seconds until time to down (i.e.: how far ahead or behind the ideal rank will take us)</a></li>
+<li class="toc-entry toc-h3"><a href="#real-case-studies">Real case studies</a></li>
+<li class="toc-entry toc-h3"><a href="#rank-progression-during-code-development-of-the-formula">Rank progression during code development of the formula</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#conclusion">Conclusion</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Designing and programming an event-driven predictive model in Lua</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2022-09-06T00:00:00+10:00" itemprop="datePublished">
+        Sep 6, 2022
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>This blog post details an 8-month journey in developing <a href="https://www.mathworks.com/discovery/predictive-modeling.html">predictive math algorithms</a> in WoW &amp; integrating them into the <a href="https://wowpedia.fandom.com/wiki/Category:API_events">TBC</a> &amp; <a href="https://github.com/WeakAuras/WeakAuras2/wiki/API-Documentation">WeakAura</a> APIs. The WeakAuras integration requires deep knowledge of their API, often requiring experimentation to discover the full extent of their interface due to competing sources of incomplete &amp; outdated documentation.</p>
+
+<p>Integrating with the 2 API’s also involved the <a href="https://www.lua.org/">Lua programming language</a>, and since the math we desire is predictive, it also required understanding the “hidden” math that drives the WoW product behind the scenes.</p>
+
+<p>For your convenience, these algorithms are now shared via <a href="https://wago.io/t6on5CWbp">Wago</a> &amp; you can also view this in <a href="https://www.linkedin.com/in/michael-nguyen57/">PDF format on my LinkedIn page</a>.</p>
+
+<blockquote>
+  <p>ℹ️ Unlike my other posts which cover serious technical topics, such as Big O space &amp; time complexity of various MS-SQL execution plans, this post is more casual.  It documents a problem that a programmer unexpecting discovers in their life outside of work, &amp; realizes an opportunity to solve that problem using niche skills &amp; knowledge outside of their usual domain of expertise.</p>
+</blockquote>
+
+<h2 id="the-problem-to-solve">The problem to solve</h2>
+<p>The shortest &amp; over-simplified way to describe the problem I had was:</p>
+
+<p>“Given a specific encounter, what is the highest rank of <a href="https://tbc.wowhead.com/spell=1064/chain-heal">chain heal</a> that I can use sustainably until the encounter ends”</p>
+
+<p>Since resto shamans suffer from severe mana issues, solving this problem would enable us to maximize <a href="https://wowwiki-archive.fandom.com/wiki/Healing_comparison#Introduction">mana efficiency</a> in any dynamic encounter.</p>
+
+<p>To simplify this problem further, we can do an intentional (but invalid) assumption: more mana should always equals more healing output. If this were the case, solving the problem simply requires a math formula to ensure that mana usage remains <strong>inversely correlated</strong> to required output:</p>
+
+<p><img src="https://i.imgur.com/P8LZ5TH.png" alt="Mana efficiency comparison" title="Mana efficiency comparison" /></p>
+
+<p><em>This diagram depicts mana usage (blue) &amp; required output (red).  Ideally these remain inversely correlated regardless of encounter time.  During times 24-31, we can see that there is insufficient mana to meet output. In order to meet output, we ideally expend mana more efficiently during times 1-8, represented as the grey line. If we were to solve our problem reliably via predictive modelling, our expenditure (blue line) should be matching the grey line.</em></p>
+
+<p>The above diagram illustrates the problem we are solving using a composite chart. If we look at real data (real charts), we begin understanding just how complex our problem really is. Below are non-composite charts, displaying real data that was <a href="https://classic.warcraftlogs.com/">captured</a> during a Muru twins encounter.</p>
+
+<p><img src="https://i.imgur.com/0c7l7BJ.png" alt="Mana level during a muru twins encounter" title="Mana level during a muru twins encounter" /></p>
+
+<p><em>Mana level during the encounter (blue). Due to a large number of dynamic variables at play in different moments, mana expenditure rates differ throughout an encounter.</em></p>
+
+<p><img src="https://i.imgur.com/XFu2vy8.png" alt="Raid-wide damage taken" title="Raid-wide damage taken" /></p>
+
+<p><em>Healing output required (red). Due to damage being dealt non-uniformly during an encounter, some moments require low output whereas others require extremely high output. Ideally, mana is conserved during low-healing periods to then be spent when it’s needed the most. If we were to compare this chart vs our composite chart earlier on, a grey line (ideal mana expenditure) on this chart would always be inversely correlated to the red line.</em></p>
+
+<p><img src="https://i.imgur.com/tDHFdlx.png" alt="Healing output" title="Healing output" /></p>
+
+<p><em>Actual output - aqua, lime &amp; red show different chain heal ranks being used.<br />
+Due to mana being a scarce resource, various ranks need to be mixed together to sustainably meet required output throughout an encounter. It’s difficult to identify the exact rank to use in each specific moment, which is the problem we aim to solve through our predictive modelling.</em></p>
+
+<h2 id="designing-the-predictive-model">Designing the predictive model</h2>
+<h3 id="example-scenario">Example scenario</h3>
+<p>To help understand our problem in more depth, we can run through a scenario:</p>
+<blockquote>
+  <p>ℹ️ Real encounters are significantly more complicated. Hence, this upcoming first example is significantly over-simplified &amp; “cut down” just to help illustrate the problem we are trying to solve. Later in this post, we will deep dive into developing the final formula that is more complex, accurate &amp; pragmatic for a wide range of encounters.</p>
+</blockquote>
+
+<p><em>“Suppose we are in an encounter with a target having 100 remaining hit points. If the raid has 20 dps roles each outputting 0.5 damage per second, &amp; assuming a current mana pool level of 1000 mana, can a chain heal rank $vn$ be sustainably casted for this situation?”</em></p>
+
+<p>A good first step to solving any math question is to identify the constants listed in the problem description. Then we can solve for $vn$:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Constant</th>
+      <th>Value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Remaining target hit points</td>
+      <td>100</td>
+      <td>- Simply put, the raid needs to output 100 damage total to end this encounter.</td>
+    </tr>
+    <tr>
+      <td>Number of dps roles</td>
+      <td>20</td>
+      <td>- Number of roles in the raid that are specifically there to deal damage (instead of absorbing damage or healing).</td>
+    </tr>
+    <tr>
+      <td>Damage per dps raid role</td>
+      <td>0.5</td>
+      <td>- Measured in seconds, this is the average output for each dps role.<br />- Since this is a run-time variable that fluctuates throughout the course of an encounter, it therefore must be re-calculated at a high frequency to be reliably used as input to any predictive modelling.<br />- We will treat this variable as a constant just to simplify this first example, &amp; we will dive deeper into event-based triggers later in this post.</td>
+    </tr>
+    <tr>
+      <td>Mana</td>
+      <td>1000*</td>
+      <td>- Available mana to expend for chain heal</td>
+    </tr>
+    <tr>
+      <td>Chain heal cast mana cost</td>
+      <td>540</td>
+      <td>- Mana cost to output 1 chain heal.<br />- Whilst this example uses a fixed constant of 540, the actual cost in real encounters is more complicated (we will dive into tidal focus &amp; t6p4 modifiers’ later in this post).</td>
+    </tr>
+    <tr>
+      <td>Chain heal cast time</td>
+      <td>2.5</td>
+      <td>- Seconds required to output 1 chain heal.<br />- We will treat base cast as 2.5 seconds to simplify this first example, however the real cast time is more complicated (we will dive more into haste conversions later in this post).</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>For simplicity in this first example, we are assuming the mana pool as static (rather not the effective mana pool). Effective mana pool needs to be considered instead to make our predictive model accurate &amp; reliable. For sake of explanation, this example uses static, &amp; we will dive into effective mana pool calculations later in this post)</em></p>
+
+<p>With our constants identified, we can solve for $vn$ to verify if it’s a viable rank of chain heal:</p>
+
+<p>$vn =$ mana surplus at end $\geq 0$</p>
+
+<p>$vn =$ casts required until end of encounter $-$ mana required for each cast $\geq 0$</p>
+
+<p>$vn = m - { td \over ct } cm \ge 0$</p>
+
+<ul>
+  <li>where $m =$ static mana available</li>
+  <li>where $td =$ time to down</li>
+  <li>where $ct =$ chain heal cast time</li>
+  <li>where $cm =$ chain heal mana cost</li>
+</ul>
+
+<p>$vn = m - \left( h \div (n . d) \over ct \right)cm \geq 0$</p>
+
+<ul>
+  <li>where $h =$ remaining health</li>
+  <li>where $n =$ number of raid members</li>
+  <li>where $d =$ damage per second for each raid member</li>
+</ul>
+
+<p>$vn = 1000 - \left( 100 \div (20 \div 0.5) \over 2.5 \right)540 \geq 0$</p>
+
+<p>$\therefore vn \lt 0 \implies vn$ is not a viable chain heal rank</p>
+
+<h3 id="problem-solved-right">Problem solved? …right?</h3>
+<p>Well, as I discovered during testing, not really. This equation only considers a subset of all factors that exist in real encounters. And for our predictive model to be pragmatic &amp; applicable to a wider range of encounters, we have to get our hands dirty.</p>
+
+<p>Additionally, the equation we’ve made so far makes all sorts of <strong>incorrect assumptions</strong>. To make the equation pragmatic for real encounters, we need to solve 2 more problems:</p>
+
+<ol>
+  <li>Real encounters involve significantly <strong>more factors</strong>, which change as the encounter moves along. For instance, one can expect to use <a href="https://tbc.wowhead.com/spell=16190/mana-tide-totem">Mana Tide</a> once during an encounter – a certain talent that restores 24% of the max static mana pool. But it has a long cooldown &amp; can usually only be used once. To consider this talent in our equation, it would need to consider mana tide when its <strong>off</strong> cooldown and also when it’s <strong>on</strong> cooldown</li>
+  <li>We need to trigger the calculation based on an <strong>event</strong> (I.e.: integrate into WoW’s event-driven architecture). Having an event-based trigger is a <strong>functional requirement</strong>, due to this expensive formula needing to be re-calculated at a high frequency, &amp; other factors leading us to having no other optimisation options.
+    <ul>
+      <li>We can’t use magnificent things like <a href="https://www.mathworks.com/help/simulink/ug/about-lookup-table-blocks.html">lookup tables</a> due to the inputs being dynamic &amp; ever-changing throughout an encounter</li>
+      <li>We can’t cache anything due to a sandbox technical restraint where variable scopes are severely limited when performing programmatic calculations or custom logic in WoW.</li>
+    </ul>
+  </li>
+</ol>
+
+<p>Let’s start with our 1st problem: identifying the other factors.</p>
+
+<h3 id="identifying-all-influencing-factors">Identifying all influencing factors</h3>
+<p>Due to this post already being too long for my liking, I’ll jump straight to it - a couple weeks of soul-searching lead me to creating this diagram, containing our list of all “other factors” that a predictive model needs to be reliably applicable to a wide range of encounters.</p>
+
+<p>Originally sketched out in pencil on the back of a scrap envelope, it has now been converted into a pristine diagram for your viewing pleasure:</p>
+
+<p><img src="https://i.imgur.com/w6JnP2t.png" alt="Overview of all influencing factors" title="Overview of all influencing factors" />
+<em>All factors that need to be considered are listed in the middle, from “static mp5 data” to “cooldowns data”</em></p>
+
+<p><strong>Static mp5 data</strong>. Mana is actually restored over time, albeit at a very low &amp; reduced rate (often referred to as the “casting mp5” rate). This is an equation in itself that involves additional sub-factors:</p>
+<ul>
+  <li><a href="https://tbc.wowhead.com/spell=27521/mana-restore">Insightful Earthstorm Diamond</a> (IED) - an item that has a chance of restoring a fixed amount of mana. More about this math in a second.</li>
+  <li><a href="https://tbc.wowhead.com/spell=16190/mana-tide-totem">Mana Tide</a> - a skill we already talked about that restores 24% of the max static mana pool</li>
+  <li><a href="https://tbc.wowhead.com/item=22832/super-mana-potion">Mana Potions</a> - consumables that restore mana. The amount restored is not fixed but rather a range &amp; is therefore influenced by <a href="https://en.wikipedia.org/wiki/Pseudorandomness">randomness</a>.</li>
+  <li><a href="https://tbc.wowhead.com/spell=33736/water-shield">Water Shield</a> - a complex mechanic that modifies the “casting mp5” restoration rate. It also restores a fixed amount of mana based on a specific event (the caster needs to take damage to trigger this secondary mechanic), which also happens to have a hidden internal <a href="https://wowpedia.fandom.com/wiki/Cooldown">GCD</a>. Due to our encounters always involving long spans of time, we can thankfully consider this GCD impact negligible.</li>
+</ul>
+
+<p><strong>Mana Tide</strong> &amp; <strong>Mana Potions</strong> can be assumed to have a fixed number of uses per encounter. Mana Tide oftens sits at 1 usage per encounter, whereas Mana Potions often sit at 2 usages per encounter. We will need to fetch this data somehow because our predictive model needs input that identifies whether these can be used at any moment during an encounter.</p>
+
+<blockquote>
+  <p>ℹ️ When we consider all these additional factors, we are now calculating an “accurate” mana pool, compared to our over-simplified mana pool listed in the first example. This is referred to as the “effective mana pool”, which can be used as a reliable input to our predictive model.</p>
+</blockquote>
+
+<h3 id="expanding-the-equation">Expanding the equation</h3>
+<p>Previously, we developed an equation that only considered a subset of factors that exist in real encounters:</p>
+
+<p>$vn = m - { h \div (n . d) \over ct } cm \geq 0$</p>
+
+<p>The left-hand side basically asks the question: “how much mana surplus exists if a specific chain heal rank is casted continuously until end of the encounter”. But now that we’ve identified all influencing factors required to make our inputs reliable, we can now substitute these new inputs in lieu of $m$:</p>
+
+<p>$vn = (mp + mf + mt + mi + mp) - { h \div (n . d) \over ct } cm \geq 0$</p>
+
+<ul>
+  <li>where $mp =$ current mana level.</li>
+  <li>where $mf =$ static mana restored every 5 seconds.</li>
+  <li>where $mt =$ absolute amount of mana restored from mana tide.</li>
+  <li>where $mi =$ expected mana to be restored from ied.</li>
+  <li>where $mp =$ mana restored from potion usage.</li>
+</ul>
+
+<p>Excellent. Now that we’ve expanded the equation, all <strong><em>high-level</em></strong> equation variables are now defined. We can now start decomposing the equation to identify all <strong><em>low-level</em></strong> equation variables. This allows us to identify any other remaining factors that are needed to implement our predictive model successfully, &amp; to ensure we can actually source all of the input necessary for our model.</p>
+
+<h3 id="decomposing-the-equation-lhs">Decomposing the equation (LHS)</h3>
+
+<p>$vn = mp + mf + mt + mi + mp$</p>
+
+<p>$vn = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } . iedm . iedc \right) + { mpl + mph \over 2 }$</p>
+
+<ul>
+  <li>where $mp =$ current mana level</li>
+  <li>where $mo =$ static mana restored every <strong>1</strong> second</li>
+  <li>where $td =$ time to down</li>
+  <li>where $mmp =$ maximum mana level</li>
+  <li>where $mtp =$ percentage of maximum mana level restored from mana tide</li>
+  <li>where $ct =$ chain heal cast time</li>
+  <li>where $iedm =$ mana restored from an IED proc</li>
+  <li>where $iedc =$ probability of IED proc</li>
+  <li>where $mpl =$ minimum mana potion restore</li>
+  <li>where $mph =$ maximum mana potion restore</li>
+</ul>
+
+<h3 id="decomposing-the-equation-rhs">Decomposing the equation (RHS)</h3>
+
+<p>$vn = \left( h \div (n . d) \over ct \right) cm$</p>
+
+<p>$vn = \left( h_r \div dps \over ct \right) cm$</p>
+
+<ul>
+  <li>where $h_r =$ health remaining</li>
+  <li>where $dps =$ the raid’s damage per second</li>
+</ul>
+
+<p>$vn = { h_r \over dps } \div ct . cm$</p>
+
+<p>$vn = h_r \div { d \over et } \div ct . cm$</p>
+
+<ul>
+  <li>where $d =$ the raid’s damage so far as an absolute value</li>
+  <li>where $et =$ encounter time</li>
+</ul>
+
+<p>$vn = h_r \div { h_x - h_c \over et } \div ct . cm$</p>
+
+<ul>
+  <li>where $h_x =$ target max health</li>
+  <li>where $h_c =$ target current health</li>
+</ul>
+
+<p>$vn = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$</p>
+
+<ul>
+  <li>where $t_c =$ current time in the encounter, expressed as unix timestamp</li>
+  <li>where $t_s =$ start time of the encounter, expressed as unix timestamp</li>
+</ul>
+
+<h3 id="re-composing-the-equation">Re-composing the equation</h3>
+<p>With the left &amp; right sides decomposed, we can re-compose the 2 sides to finalize our equation:</p>
+
+<p>$vn = m_e - m_r \ge 0$</p>
+
+<p>$m_e \implies$ effective mana</p>
+
+<p>$m_r \implies$ required mana</p>
+
+<p>$m_e = mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 }$</p>
+
+<p>$m_r = h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm$</p>
+
+<p>$\therefore vn = \left( mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 } \right) - \left( h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm \right) \ge 0 \implies$ chain heal rank $vn$ is viable</p>
+
+<p>Where a positive number (greater than 0) indicates mana <strong>surplus</strong> (i.e.: the chain heal rank is viable), and a negative number indicates mana <strong>deficit</strong> (i.e.: not viable).</p>
+
+<p>Fantastic. Now that we have our final formula, the remaining work is to substitute our new variables with constants.</p>
+
+<h3 id="researching-the-additional-constants--run-time-variables">Researching the additional constants &amp; run-time variables</h3>
+<p>Based on the above equation, we can identify the constant variables, &amp; thankfully, their values can be researched using <a href="https://tbc.wowhead.com/">the wowhead database</a>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Unit</th>
+      <th>Constant <code class="language-plaintext highlighter-rouge">C</code> or Run-time <code class="language-plaintext highlighter-rouge">R</code> variable?</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>$mp$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$mo$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$td$</td>
+      <td>Seconds (expressed as a time span)</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$mmp$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$mtp$</td>
+      <td>Percentage</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code>**</td>
+      <td>0 to 0.24*</td>
+    </tr>
+    <tr>
+      <td>$ct$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code>**</td>
+      <td>TBD***</td>
+    </tr>
+    <tr>
+      <td>$iedm$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code></td>
+      <td>300</td>
+    </tr>
+    <tr>
+      <td>$iedc$</td>
+      <td>Percentage</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code>****</td>
+      <td>.05</td>
+    </tr>
+    <tr>
+      <td>$mpl$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code></td>
+      <td>0 or 1800*</td>
+    </tr>
+    <tr>
+      <td>$mph$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code></td>
+      <td>0 or 3000*</td>
+    </tr>
+    <tr>
+      <td>$h_r$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$h_x$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$h_c$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$t_c$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$t_s$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
+      <td>n/a</td>
+    </tr>
+    <tr>
+      <td>$cm$</td>
+      <td>Numeric</td>
+      <td><code class="language-plaintext highlighter-rouge">C</code></td>
+      <td>TBD*****</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>*Is 0 when item/spell already expended &amp; not available. This means the variable functions as both a constant and a run-time variable.</em></p>
+
+<p><em>**The equation uses multiplication instead of addition for mana tide restoration, so whilst technically the mana amount restored is variable, it can be treated as a fixed constant in calculations</em></p>
+
+<p><em>***Calculating this run-time variable requires a bit more work, which we dive into the next section</em></p>
+
+<p><em>****Encounters last a long-enough time span &amp; hence; this can be reliably calculated using <a href="https://samuraitradingacademy.com/trading-expectancy/#:~:text=What%20is%20Trading%20Expectancy%3F,thirty%20to%20be%20statistically%20significant">expectancy</a>.), which is simply probability of proc chance multiplied by amount restored for one proc</em></p>
+
+<p><em>*****Value depends on rank used</em></p>
+
+<p>After researching most of the variables, the remaining 2 fixed Variables we can try figure out are $cm$ &amp; $c_t$. Based on the wowhead database, the mana costs for each chain heal ranks ($cm$) are:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Level for $vn$</th>
+      <th>Base value for  $cm$</th>
+      <th>Actual value for  $cm$*</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>$v_5$</td>
+      <td><a href="https://tbc.wowhead.com/spell=25423/chain-heal">540</a></td>
+      <td>459.00</td>
+    </tr>
+    <tr>
+      <td>$v_4$</td>
+      <td><a href="https://tbc.wowhead.com/spell=25422/chain-heal">435</a></td>
+      <td>369.75</td>
+    </tr>
+    <tr>
+      <td>$v_3$</td>
+      <td><a href="https://tbc.wowhead.com/spell=10623/chain-heal">405</a></td>
+      <td>344.25</td>
+    </tr>
+    <tr>
+      <td>$v_2$</td>
+      <td><a href="https://tbc.wowhead.com/spell=10622/chain-heal">315</a></td>
+      <td>267.75</td>
+    </tr>
+    <tr>
+      <td>$v_1$</td>
+      <td><a href="https://tbc.wowhead.com/spell=1064/chain-heal">260</a></td>
+      <td>221.00</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>*85% reduction after <a href="https://tbc.wowhead.com/item-set=683/skyshatter-raiment#wh89j34tn97">tier 6 4-piece bonus</a> &amp; <a href="https://tbc.wowhead.com/spell=16217/tidal-focus">5/5 tidal focus.</a> These “actual costs” are not displayed in-game in the tooltips, &amp; instead must be manually calculated to obtain the correct values</em></p>
+
+<p>This gives us $cm$, but we still need to solve for $ct$…</p>
+
+<h3 id="solving-the-hasted-cast-time-formula">Solving the hasted cast time formula</h3>
+<p>As of writing, tbc classic is at <code class="language-plaintext highlighter-rouge">2.5.4</code> (build <code class="language-plaintext highlighter-rouge">44171</code>).</p>
+
+<p>This infers a <a href="https://wowwiki-archive.fandom.com/wiki/Haste">haste rating conversion rate</a> of <strong>15.77</strong> inside of the game engine, which we were able to verify across multiple sources &amp; also by comparing the modified cast time duration displayed on the in-game cast tooltips. Using this verified value, we can now use it to solve the adjusted cast time ($ct$):</p>
+
+<p>$ct = {b \over e }$</p>
+
+<ul>
+  <li>where $b =$ base cast time</li>
+  <li>where $e =$ extra casts from additional haste</li>
+</ul>
+
+<p>$ct = b \div \left( 1 + \left( { hr \over hc } \div 100 \right) \right)$</p>
+
+<ul>
+  <li>where $hr =$ runtime haste rating</li>
+  <li>where $hc =$ haste rating conversion rate</li>
+</ul>
+
+<p>let $hr = 300$</p>
+
+<p>$ct = 2.5 \div \left( 1 + \left( { 300 \over 15.77 } \div 100 \right) \right)$</p>
+
+<p>$\therefore ct = 2.1004$ (4 dp)</p>
+
+<p>…and that’s the last fixed variable!</p>
+
+<h3 id="yay-or-nay">Yay or Nay?</h3>
+<p>We did it! We have successfully verified our predictive model as being implementable.</p>
+
+<p>The remaining inputs are run-time variables which need to be fetched via either the TBC API or WA API. We can now start implementing this formula in code!</p>
+
+<h3 id="implementing-the-math-equation">Implementing the math equation</h3>
+<p>There are many different approaches to translating pseudocode into actual code.</p>
+
+<p>For those fans of the <a href="https://www.amazon.com/Code-Complete-Practical-Handbook-Construction/dp/0735619670">Code Complete</a> construction handbook, the ideal weapon of choice is often <a href="http://ps.informatik.uni-tuebingen.de/teaching/ss15/sct/StudentMaterial/09%20-%20Noah%20Doersing%20-%20pseudocode.pdf">the Pseudocode Programming Process</a>. And since we already have our list of inputs, the natural process is to start grouping the inputs into “purposes”, then each “purpose” gets translated into 1 method.</p>
+
+<p>For reading convenience, the formula will be shown again below:</p>
+
+<p>$\therefore vn = \left( mp + (mo . td) + (mmp . mtp) + \left( { 5 \over ct } iedm . iedc \right) + { mpl + mph \over 2 } \right) - \left( h_r \div { h_x - h_c \over t_c - t_s } \div ct . cm \right) \ge 0 \implies$ chain heal rank $vn$ is viable</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Input</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>$vn$</td>
+      <td>get ideal chain heal rank</td>
+    </tr>
+    <tr>
+      <td>$ct$</td>
+      <td>get chain heal cast time</td>
+    </tr>
+    <tr>
+      <td>$td$</td>
+      <td>get time to down</td>
+    </tr>
+    <tr>
+      <td>$h_r$ $h_x$ $h_c$ $t_c$ $t_s$ $cm$</td>
+      <td>get mana required until target down</td>
+    </tr>
+    <tr>
+      <td>$mp$</td>
+      <td>get mana pool</td>
+    </tr>
+    <tr>
+      <td>$mo$</td>
+      <td>get mana restoration from mp5 stat</td>
+    </tr>
+    <tr>
+      <td>$mmp$ $mtp$</td>
+      <td>get mana restoration from mana tide</td>
+    </tr>
+    <tr>
+      <td>$iedm$ $iedc$</td>
+      <td>get mana restoration from ied gem</td>
+    </tr>
+    <tr>
+      <td>$mpl$ $mph$</td>
+      <td>get mana restoration from mana potion</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>If each table row is 1 method, we would then just need <a href="https://stackoverflow.com/questions/1451543/what-does-driver-program-mean#:~:text=A%20driver%20is%20generally%20a,outputting%20to%20CSV%20and%20HTML.">a driver method</a> to call them in the right order. It doesn’t really matter what we call the driver method (aslong as it makes sense), &amp; I eventually decided to call mine “get_ideal_chr”.</p>
+
+<p>This gives us a nice pseudocode skeleton to start filling in with actual code:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>function get_ideal_chr() end
+function get_cast_time() end
+function get_ttd() end
+function get_ttd_mana() end
+function get_mana_pool() end
+function get_mana_from_mp5() end
+function get_mana_from_tide() end
+function get_mana_from_ied() end
+function get_mana_from_pot() end
+</code></pre></div></div>
+
+<h2 id="developing-the-pseudocode-and-lua">Developing the pseudocode and Lua</h2>
+<h3 id="get_ideal_chr">get_ideal_chr</h3>
+<p>Firstly, we need a method that gives us the ideal chain heal rank. It essentially revolves around 2 main points:</p>
+<ul>
+  <li>ttd in seconds</li>
+  <li>mana cost until ttd is 0 seconds</li>
+</ul>
+
+<p>Therefore, if there’s enough mana, it is therefore a viable chain heal rank. My result of translating this into pseudocode is as follows:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>begin get_ideal_chr 
+  for each chain heal rank 
+    calculate ttd in seconds 
+    calculate mana required assuming ttd is 0 seconds 
+    if available mana &gt; mana required 
+      return true 
+    else 
+      return false 
+    endif 
+  endfor 
+end get_ideal_chr 
+</code></pre></div></div>
+
+<p>Based on our skeleton structured defined beforehand, we know that time-to-down method (get_ttd) will be part of our module too. This means we can accept it as a parameter instead of calculating it within this method for each chain heal rank.</p>
+
+<p>With all the above, we can translate the pseudocode into Lua:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_ideal_chr</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">chain_heals</span><span class="p">,</span> <span class="n">chain_heals_count</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">ttd</span><span class="p">,</span> <span class="n">mana_pool</span><span class="p">)</span> 
+  <span class="c1">-- ideal chain heal rank = max chain heal rank that can be used without going oom for an encounter </span>
+  <span class="k">for</span> <span class="n">chain_heals_index</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chain_heals_count</span> <span class="k">do</span> 
+    <span class="kd">local</span> <span class="n">chain_heal</span> <span class="o">=</span> <span class="n">chain_heals</span><span class="p">[</span><span class="n">chain_heals_index</span><span class="p">];</span> 
+    <span class="kd">local</span> <span class="n">ttd_mana</span> <span class="o">=</span> <span class="n">get_ttd_mana</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">chain_heal</span><span class="p">.</span><span class="n">mana</span><span class="p">);</span> 
+    <span class="kd">local</span> <span class="n">can_use_rank</span> <span class="o">=</span> <span class="n">mana_pool</span> <span class="o">-</span> <span class="n">ttd_mana</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">;</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="n">can_use_rank</span> <span class="ow">or</span> <span class="n">chains_heals_index</span> <span class="o">==</span> <span class="n">chain_heals_count</span><span class="p">)</span> <span class="k">then</span> 
+      <span class="k">return</span> <span class="p">{</span> 
+          <span class="n">rank</span> <span class="o">=</span> <span class="n">chain_heal</span><span class="p">.</span><span class="n">rank</span><span class="p">,</span> 
+          <span class="n">time_diff_formatted</span> <span class="o">=</span> <span class="n">get_time_diff_formatted</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chain_heal</span><span class="p">.</span><span class="n">mana</span><span class="p">)</span> 
+      <span class="p">};</span> 
+    <span class="k">end</span> 
+  <span class="k">end</span> 
+<span class="k">end</span>
+</code></pre></div></div>
+<p>Awesome. Next on the skeleton structure is <strong>get_cast_time</strong>.</p>
+
+<h3 id="get_cast_time">get_cast_time</h3>
+<p>Cast time in WoW is not a fixed number, and is affected by a characteristic called “haste”, which is a positive integer that increases the number of casts that can be performed in a fixed time period:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>begin get_cast_time 
+  calculate base cast time 
+  calculate spell haste rating 
+  set haste rating conversion rate to 15.77 
+  return base cast time / (1 + (spell haste rating / 15.77 / 100)) 
+end get_cast_time 
+</code></pre></div></div>
+<p>Since the base cast time &amp; haste rating conversion rate are fixed constants, we can simply convert them into parameters for this method.</p>
+
+<p>One final factor to think about is that the spell haste rating is actually a <strong>dynamic</strong> variable which changes throughout the course of an encounter. For instance, different gear sets will result in different ratings, as well as buffs such as heroism, or procs from special trinkets like <a href="https://tbc.wowhead.com/item=28190/scarab-of-the-infinite-cycle">Scarab of the Infinite Cycle</a>. As such, this dynamic variable will need to come from the blizzard API and therefore it needs to be converted into a parameter.</p>
+
+<p>With the above consideration, translating our pseudocode gives us the following Lua:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_cast_time</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">base_cast_time</span><span class="p">,</span> <span class="n">haste_rating</span><span class="p">,</span> <span class="n">haste_rating_conversion_rate</span><span class="p">)</span> 
+  <span class="c1">-- hasted cast time = baseCastTime / extraCastsFromHaste </span>
+  <span class="k">return</span> <span class="n">base_cast_time</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">haste_rating</span> <span class="o">/</span> <span class="n">haste_rating_conversion_rate</span> <span class="o">/</span> <span class="mi">100</span><span class="p">));</span> 
+<span class="k">end</span>
+</code></pre></div></div>
+<p>Whilst a small function, it was incredibly important to spend the necessary time thinking to get this right. With the haste rating being a dynamic variable that changes during encounters, this method can return significantly different results, at a MINIMUM range difference of +/- 20%. This percentage is fed into other calculations which we’ll get to soon, further creating inaccuracies &amp; significantly impacting the final result to the point of the predictive model being ineffective.</p>
+
+<p>With this out of the way, we move onto one of the most important methods: ttd.</p>
+
+<h3 id="get_ttd">get_ttd</h3>
+<p>ttd = time to down. This is best explained through an example:</p>
+<ul>
+  <li>Assuming an encounter npc with <code class="language-plaintext highlighter-rouge">60,000/100,000</code> hp</li>
+  <li>Assuming an encounter start timestamp of <code class="language-plaintext highlighter-rouge">00:00:30</code>, with the current timestamp of <code class="language-plaintext highlighter-rouge">00:01:30</code></li>
+  <li>We can therefore determine the damage per second (dps) by taking the missing health &amp; dividing it by time spent in the encounter so far. Then given this dps, we can determine the remaining encounter time (ttd) as remaining health / damage per second. So for this example, it turns out to be <code class="language-plaintext highlighter-rouge">60000 / ((100000 - 60000) / 90)</code> which is 135 seconds</li>
+</ul>
+
+<p>And given that this method contains almost solely of dynamic variables, we can write some approximate pseudocode to give us an idea of the Lua, which will definitely need a condition:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>begin get_ttd 
+  calculate encounter time 
+  if encounter already finished then 
+    return 1 
+  endif 
+
+  calculate damage per second 
+  return remaining hp / damage per second 
+end get_ttd
+</code></pre></div></div>
+<p>Some extra things to consider:</p>
+
+<ul>
+  <li>Encounter start time is not provided by the blizzard API, but rather the method we use to trigger the calculation. As stated earlier in this post, we have chosen WeakAuras as our calculation trigger, therefore we need to get the encounter start time from the WeakAura API as an input parameter.</li>
+  <li>In terms of time-to-down, the calculation may continue to run even after the encounter is finished. This method should gracefully handle this scenario</li>
+  <li>The hp stats are dynamic &amp; change throughout an encounter. Therefore, they are dynamic variables &amp; must be fetched using the blizzard API</li>
+</ul>
+
+<p>Considering all the above, we can create the Lua equivalent:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_ttd</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">aura_expiry_time</span><span class="p">)</span> 
+  <span class="c1">-- time to down (in seconds) = remaining health / damage per second </span>
+  <span class="kd">local</span> <span class="n">start_time</span> <span class="o">=</span> <span class="n">aura_expiry_time</span> <span class="o">-</span> <span class="n">aura_duration</span><span class="p">;</span> 
+  <span class="kd">local</span> <span class="n">combat_time</span> <span class="o">=</span> <span class="n">GetTime</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">;</span> 
+  <span class="k">if</span> <span class="n">combat_time</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">then</span> <span class="k">return</span> <span class="mi">1</span> <span class="k">end</span> 
+
+  <span class="kd">local</span> <span class="n">dmg_so_far</span> <span class="o">=</span> <span class="n">UnitHealthMax</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">)</span> <span class="o">-</span> <span class="n">UnitHealth</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">);</span> 
+  <span class="kd">local</span> <span class="n">dps</span> <span class="o">=</span> <span class="n">dmg_so_far</span> <span class="o">/</span> <span class="n">combat_time</span><span class="p">;</span> 
+  <span class="k">return</span> <span class="n">UnitHealth</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">)</span> <span class="o">/</span> <span class="n">dps</span><span class="p">;</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>Excellent. Now that we can calculate time-to-down in seconds, we can now move on to calculating the mana required (I.e.: assuming time-to-down reaches 0).</p>
+
+<h3 id="get_ttd_mana">get_ttd_mana</h3>
+<p>Since we calculated time-to-down in seconds, this one is thankfully fairly simple. We just need to calculate the number of chain heal casts until time-to-down, then multiply that by the mana cost for the given chain heal rank we are trying to calculate viability for (identified as $vn$ earlier in this post).</p>
+
+<p>The final aspect to consider is to separate the static from the dynamic variables. In fact, time-to-down, cast time (calculated with spell haste rating) and chain heal rank mana cost are all dynamic variables!</p>
+
+<p>The pseudocode turned out to be so short &amp; self-explanatory, so let’s jump straight into the juicy Lua:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_ttd_mana</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">)</span> 
+  <span class="c1">-- expected mana required until target downed = time to down / chain heal cast time * chain heal mana cost per cast </span>
+  <span class="k">return</span> <span class="n">ttd</span> <span class="o">/</span> <span class="n">cast_time</span> <span class="o">*</span> <span class="n">chr_mana</span><span class="p">;</span> 
+<span class="n">End</span> 
+</code></pre></div></div>
+
+<h3 id="get_mana_pool">get_mana_pool</h3>
+<p>Aw yeah, this is the big one.</p>
+
+<p>This is the method that the whole module revolves around, &amp; as I discovered, it can get fairly complicated. In its simplest form, we need to know the “expected” mana available until time-to-down reaches 0.</p>
+
+<p>This involves many factors, due to many mana restoration options available for resto shaman. In our specific usage scenarios, the variables are:</p>
+
+<ul>
+  <li>Current mana (at time of formulae trigger/calculation)</li>
+  <li>Current mp5. This is our passive mana regeneration</li>
+  <li>Mana restored from Mana Tide (24%)</li>
+  <li>Mana restoration expectancy from IED procs</li>
+  <li>Mana restoration from consumables</li>
+</ul>
+
+<p>Given the above, we can now start the write the pseudocode:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>begin get_mana_pool 
+  calculate ttd 
+  calculate chain heal cast time 
+  calculate mana tide mana restore 
+  calculate ied mana restore expectancy 
+  calculate ied proc chance in percent 
+  calculate mana potion restore 
+end get_mana_pool
+</code></pre></div></div>
+<p><strong>All of the above are dynamic variables</strong> &amp; therefore need to be fetched using the TBC &amp; WeakAura APIs. In addition, referring to our skeleton structure, a lot of our calculations have their own methods. Therefore, our Lua would just need to return the concatenated method return values:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_mana_pool</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">mana_tide_restore_pct</span><span class="p">,</span> <span class="n">ied_proc_mana</span><span class="p">,</span> <span class="n">ied_proc_chance_pct</span><span class="p">,</span> <span class="n">mana_pot_min</span><span class="p">,</span> <span class="n">mana_pot_max</span><span class="p">)</span> 
+  <span class="c1">-- mana pool = the expected amount of remaining mana that is usable for an encounter </span>
+  <span class="k">return</span> <span class="n">UnitPower</span><span class="p">(</span><span class="s2">"player"</span><span class="p">)</span> 
+  <span class="o">+</span> <span class="n">get_mana_from_mp5</span><span class="p">(</span><span class="n">ttd</span><span class="p">)</span> 
+  <span class="o">+</span> <span class="n">get_mana_from_tide</span><span class="p">(</span><span class="n">mana_tide_restore_pct</span><span class="p">)</span> 
+  <span class="o">+</span> <span class="n">get_mana_from_ied</span><span class="p">(</span><span class="n">cast_time</span><span class="p">,</span> <span class="n">ied_proc_mana</span><span class="p">,</span> <span class="n">ied_proc_chance_pct</span><span class="p">)</span> 
+  <span class="o">+</span> <span class="n">get_mana_from_pot</span><span class="p">(</span><span class="n">mana_pot_min</span><span class="p">,</span> <span class="n">mana_pot_max</span><span class="p">);</span> 
+<span class="k">end</span>
+</code></pre></div></div>
+<p>With our new driver method, we can now drill into each of these granular methods, which allow us to calculate the total mana available given time-to-down reaches 0.</p>
+
+<h3 id="get_mana_from_mp5">get_mana_from_mp5</h3>
+<p>MP5 is a passive &amp; fixed metric, so we just need to convert the mp5 into mp1, then multiply that by time-to-down (which is also in seconds):</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_mana_from_mp5</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">ttd</span><span class="p">)</span>
+  <span class="c1">-- mana regenerated from mp5 = mana regenerated per second (while casting) * time to down seconds </span>
+  <span class="kd">local</span> <span class="n">_</span><span class="p">,</span> <span class="n">player_mp1</span> <span class="o">=</span> <span class="n">GetManaRegen</span><span class="p">(</span><span class="s2">"player"</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">player_mp1</span> <span class="o">*</span> <span class="n">ttd</span><span class="p">;</span> 
+<span class="k">end</span> 
+</code></pre></div></div>
+
+<h3 id="get_mana_from_tide">get_mana_from_tide</h3>
+<p>As of time of writing this, mana tide restores exactly 24 percent of the base mana pool. Therefore, this method just returns that calculation.</p>
+
+<p>One thing to consider is that mana tide can be on cooldown during an encounter, begging the question of how many mana tides can be used during a single encounter? Given a cooldown of 5 minutes, and SWP encounters lasting roughly 6-8 minutes, we can safely assume that only 1 mana tide can be used per encounter (including shorter encounters).</p>
+
+<p>Therefore, our Lua method simply needs to assume 0 mana return when tide is on cooldown, otherwise return the calculation. Very simple &amp; straight-forward, &amp; we can jump straight into the Lua:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_mana_from_tide</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">restore_pct</span><span class="p">)</span> 
+  <span class="c1">-- mana restored from mana tide = max player mana * percentage of max player mana restored by mana tide </span>
+  <span class="kd">local</span> <span class="n">_</span><span class="p">,</span> <span class="n">cd</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetSpellCooldown</span><span class="p">(</span><span class="mi">16190</span><span class="p">);</span> 
+  <span class="k">if</span> <span class="p">(</span><span class="n">cd</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span> 
+      <span class="k">return</span> <span class="n">UnitPowerMax</span><span class="p">(</span><span class="s2">"player"</span><span class="p">)</span> <span class="o">*</span> <span class="n">restore_pct</span><span class="p">;</span> 
+  <span class="k">end</span> 
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> 
+<span class="k">end</span> 
+</code></pre></div></div>
+
+<h3 id="get_mana_from_ied">get_mana_from_ied</h3>
+<p><a href="https://invezz.com/invest/learn/trading-expectancy/">“Expectancy”</a> is a calculation theory that refers to determining an expected result occurring from a chance-based factor, over a large-enough sample size. The simplest way to explain expectancy is using an analogy such as a lotto ticket:</p>
+<ol>
+  <li>Assuming a lotto ticket has a 1% chance of success</li>
+  <li>Assuming a sample size of 50 (you scratch 50 lotto tickets)</li>
+  <li>Given the above, what is the expected chance of winning the lotto?</li>
+  <li>This would be: .01 * 50 = .5 = 50%</li>
+  <li>Therefore, there is a 50% chance of winning the lotto</li>
+</ol>
+
+<p>The above is obviously an over-simplified example, given our module. Basically, instead of lotto tickets, we are covering IED procs. And instead of sample size, we are covering chain heal casts until time-to-down reaches 0. On top of this, we are trying to calculate the IED proc chance plus the IED mana restoration expectancy.</p>
+
+<p>With expectancy now explained, we can move onto developing the actual calculation itself. IED procs are triggered PER CAST. This means to calculate the mp5 restored from IED, we need to first calculate the number of chain heal casts per mp5 tick (every 5 seconds), then multiply that against the expected mana return if an IED were to successfully proc.</p>
+<ul>
+  <li>Number of chain heal casts per mp5 tick: <code class="language-plaintext highlighter-rouge">5 / cast_time</code></li>
+  <li>Expected mana return if IED were to proc: <code class="language-plaintext highlighter-rouge">proc_mana * proc_chance_pct</code></li>
+  <li>Therefore expected mana from equipping: <code class="language-plaintext highlighter-rouge">ied = (5 / cast_time) * (proc_mana * proc_chance_pct)</code></li>
+</ul>
+
+<p>Since all variables in the calculation are dynamic, we need to fetch them from the blizzard API and therefore they need to be developed as Lua parameters. With all the above finally considered, we can write the necessary Lua:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_mana_from_ied</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">cast_time</span><span class="p">,</span> <span class="n">proc_mana</span><span class="p">,</span> <span class="n">proc_chance_pct</span><span class="p">)</span> 
+  <span class="c1">-- expected mana from ied procs = number of chain heal casts per mp5 tick * expected ied mana restore per chain heal cast </span>
+  <span class="k">return</span> <span class="p">(</span><span class="mi">5</span> <span class="o">/</span> <span class="n">cast_time</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">proc_mana</span> <span class="o">*</span> <span class="n">proc_chance_pct</span><span class="p">);</span>
+<span class="k">end</span> 
+</code></pre></div></div>
+<p>Geez, this is quite a lot to consider given the simplicity of the method, isn’t it?</p>
+
+<p>If IED contributed little to the available mana given time-to-down reaches 0, then it would not be worth figuring out this equation. But since chain heal cast time is affected by spell haste rating, and with phase 5 offering an enormous amount of spell haste equipment, IED therefore contributes a notable amount of mana &amp; therefore becomes an important consideration.</p>
+
+<p>Thankfully for us, the last method in our skeleton structure is is a nice simple calculation to close off with.</p>
+
+<h3 id="get_mana_from_pot">get_mana_from_pot</h3>
+<p>Mana potions have a bit of RNG, which restores mana in a range between X &amp; Y. Important factors to consider are:</p>
+<ul>
+  <li>How many potions can be used for an encounter?</li>
+  <li>What should this method return when the item cooldown is active?</li>
+</ul>
+
+<p>As of writing this, the cooldown is 2 minutes (120s). However, the cooldown is only activated if the current mana is less than or equal to the max amount of mana restored. In addition, different encounters last different durations, some are only 3 minutes, whereas others can last 8+ minutes. For simplicity, we can assume only 1 cooldown during the encounter, even if realistically 2 or 3 may be used during longer encounters (such as <a href="https://tbc.wowhead.com/guides/brutallus-sunwell-plateau-swp-strategy-burning-crusade-classic">Sunwell’s Brutallus</a>).</p>
+
+<p>The other factor to consider is what to return when cooldown is active. As I eventually figured out, this can simply be 0 - because as noted above, we can reliably assume only 1 active cooldown for the encounter (&amp; most encounters only last long enough for 1 cooldown).</p>
+
+<p>Lastly, the mana restoration amount is some number between a range of X &amp; Y, &amp; also depends on which type of mana potion is equipped. <a href="https://tbc.wowhead.com/spell=17580/major-mana-potion">Major mana potions</a> restore a much lower amount than <a href="https://tbc.wowhead.com/item=22832/super-mana-potion">their Super counterpart</a>. Therefore, we want to keep X &amp; Y as <strong>dynamic</strong> variables being passed into this method as input parameters.</p>
+
+<p>With all the above considered, we simply take the average if cooldown non-active, otherwise 0 if active:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_mana_from_pot</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">mana_pot_min</span><span class="p">,</span> <span class="n">mana_pot_max</span><span class="p">)</span> 
+  <span class="c1">-- expected pot restore per use = avg = (min restore + max restore) / 2 </span>
+  <span class="kd">local</span> <span class="n">_</span><span class="p">,</span> <span class="n">cd</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetItemCooldown</span><span class="p">(</span><span class="mi">22832</span><span class="p">);</span> 
+  <span class="k">if</span> <span class="p">(</span><span class="n">cd</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span> 
+    <span class="k">return</span> <span class="p">(</span><span class="n">mana_pot_min</span> <span class="o">+</span> <span class="n">mana_pot_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span> 
+  <span class="k">end</span> 
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> 
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>With all the skeleton methods defined in Lua, we can now wire them all up! All we need now is just something to trigger the calculation, &amp; as hinted earlier throughout this post, I chose to leverage WeakAuras to hook into WoW’s event-driven architecture.</p>
+
+<h2 id="finalities">Finalities</h2>
+<h3 id="triggering-the-lua-code-with-weakauras">Triggering the Lua code with WeakAuras</h3>
+<p>In terms of the WeakAuras (WA) API, we only need it for the time-to-down calculation. The WA API offers “aura_expiry_time” &amp; “aura_duration” as input parameters, which turns out to be exactly what we were looking for. This gives us the following trigger code:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function</span><span class="p">(</span><span class="n">aura_expiry_time</span><span class="p">,</span> <span class="n">aura_duration</span><span class="p">)</span>
+  <span class="o">...</span>
+<span class="k">end</span>
+</code></pre></div></div>
+<p>Now we just need to place the methods inside of our trigger function.</p>
+
+<p>The final factor to consider in Lua is whether we want to <a href="https://www.lua.org/pil/6.2.html">forward declare methods</a> or not. In this instance, I chose to order the methods to require forward declaration, which allowed easier maintainability.</p>
+
+<h3 id="final-lua-code">Final Lua code</h3>
+<p>With our blizzard API variables, WeakAura API variables, constants, skeleton methods defined in Lua &amp; our shiny trigger method, we can now connect it all together using forward method declarations, giving us the final Lua module:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function</span><span class="p">(</span><span class="n">aura_expiry_time</span><span class="p">,</span> <span class="n">aura_duration</span><span class="p">)</span> 
+  <span class="kd">local</span> <span class="n">vars</span> <span class="o">=</span> <span class="p">{</span> 
+    <span class="n">base_cast_time</span> <span class="o">=</span> <span class="mi">2</span><span class="p">.</span><span class="mi">5</span><span class="p">,</span> 
+    <span class="n">haste_rating</span> <span class="o">=</span> <span class="mi">296</span><span class="p">,</span> 
+    <span class="n">haste_rating_conversion_rate</span> <span class="o">=</span> <span class="mi">15</span><span class="p">.</span><span class="mi">77</span><span class="p">,</span> 
+    <span class="n">chain_heals</span> <span class="o">=</span> <span class="p">{</span> 
+      <span class="p">{</span> <span class="n">rank</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">mana</span> <span class="o">=</span> <span class="mi">442</span> <span class="p">},</span> 
+      <span class="p">{</span> <span class="n">rank</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mana</span> <span class="o">=</span> <span class="mi">353</span> <span class="p">},</span> 
+      <span class="p">{</span> <span class="n">rank</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">mana</span> <span class="o">=</span> <span class="mi">251</span> <span class="p">}</span> 
+    <span class="p">},</span> 
+    <span class="n">chain_heals_count</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> 
+    <span class="n">ied</span> <span class="o">=</span> <span class="p">{</span> 
+      <span class="n">proc_chance_pct</span> <span class="o">=</span> <span class="p">.</span><span class="mi">05</span><span class="p">,</span> 
+      <span class="n">proc_mana</span> <span class="o">=</span> <span class="mi">300</span> 
+    <span class="p">},</span> 
+    <span class="n">mana_tide</span> <span class="o">=</span> <span class="p">{</span> 
+      <span class="n">restore_pct</span> <span class="o">=</span> <span class="p">.</span><span class="mi">24</span> 
+    <span class="p">},</span> 
+    <span class="n">mana_pot</span> <span class="o">=</span> <span class="p">{</span> 
+      <span class="n">min</span> <span class="o">=</span> <span class="mi">1800</span><span class="p">,</span> 
+      <span class="n">max</span> <span class="o">=</span> <span class="mi">3000</span> 
+    <span class="p">}</span> 
+  <span class="p">};</span> 
+   
+  <span class="kd">local</span> <span class="n">get_ideal_chr</span><span class="p">,</span> 
+  <span class="n">get_cast_time</span><span class="p">,</span> 
+  <span class="n">get_ttd</span><span class="p">,</span> 
+  <span class="n">get_ttd_mana</span><span class="p">,</span> 
+  <span class="n">get_mana_pool</span><span class="p">,</span> 
+  <span class="n">get_mana_from_mp5</span><span class="p">,</span>  
+  <span class="n">get_mana_from_tide</span><span class="p">,</span> 
+  <span class="n">get_mana_from_ied</span><span class="p">,</span> 
+  <span class="n">get_mana_from_pot</span><span class="p">,</span> 
+  <span class="n">get_time_diff_formatted</span><span class="p">,</span> 
+  <span class="n">get_time_diff_secs</span><span class="p">;</span> 
+   
+  <span class="n">get_ideal_chr</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">chain_heals</span><span class="p">,</span> <span class="n">chain_heals_count</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">ttd</span><span class="p">,</span> <span class="n">mana_pool</span><span class="p">)</span> 
+    <span class="c1">-- ideal chain heal rank = max chain heal rank that can be used without going oom for an encounter </span>
+    <span class="k">for</span> <span class="n">chain_heals_index</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chain_heals_count</span> <span class="k">do</span> 
+      <span class="kd">local</span> <span class="n">chain_heal</span> <span class="o">=</span> <span class="n">chain_heals</span><span class="p">[</span><span class="n">chain_heals_index</span><span class="p">];</span> 
+      <span class="kd">local</span> <span class="n">ttd_mana</span> <span class="o">=</span> <span class="n">get_ttd_mana</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">chain_heal</span><span class="p">.</span><span class="n">mana</span><span class="p">);</span> 
+      <span class="kd">local</span> <span class="n">can_use_rank</span> <span class="o">=</span> <span class="n">mana_pool</span> <span class="o">-</span> <span class="n">ttd_mana</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">;</span> 
+      <span class="k">if</span> <span class="p">(</span><span class="n">can_use_rank</span> <span class="ow">or</span> <span class="n">chains_heals_index</span> <span class="o">==</span> <span class="n">chain_heals_count</span><span class="p">)</span> <span class="k">then</span> 
+        <span class="k">return</span> <span class="p">{</span> 
+          <span class="n">rank</span> <span class="o">=</span> <span class="n">chain_heal</span><span class="p">.</span><span class="n">rank</span><span class="p">,</span> 
+          <span class="n">time_diff_formatted</span> <span class="o">=</span> <span class="n">get_time_diff_formatted</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chain_heal</span><span class="p">.</span><span class="n">mana</span><span class="p">)</span> 
+        <span class="p">};</span> 
+      <span class="k">end</span> 
+    <span class="k">end</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_cast_time</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">base_cast_time</span><span class="p">,</span> <span class="n">haste_rating</span><span class="p">,</span> <span class="n">haste_rating_conversion_rate</span><span class="p">)</span> 
+    <span class="c1">-- hasted cast time = baseCastTime / extraCastsFromHaste </span>
+    <span class="k">return</span> <span class="n">base_cast_time</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">haste_rating</span> <span class="o">/</span> <span class="n">haste_rating_conversion_rate</span> <span class="o">/</span> <span class="mi">100</span><span class="p">));</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_ttd</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">aura_expiry_time</span><span class="p">)</span> 
+    <span class="c1">-- time to down (in seconds) = remaining health / damage per second </span>
+    <span class="kd">local</span> <span class="n">start_time</span> <span class="o">=</span> <span class="n">aura_expiry_time</span> <span class="o">-</span> <span class="n">aura_duration</span><span class="p">;</span> 
+    <span class="kd">local</span> <span class="n">combat_time</span> <span class="o">=</span> <span class="n">GetTime</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">;</span> 
+    <span class="k">if</span> <span class="n">combat_time</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">then</span> <span class="k">return</span> <span class="mi">1</span> <span class="k">end</span> 
+      
+    <span class="kd">local</span> <span class="n">dmg_so_far</span> <span class="o">=</span> <span class="n">UnitHealthMax</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">)</span> <span class="o">-</span> <span class="n">UnitHealth</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">);</span> 
+    <span class="kd">local</span> <span class="n">dps</span> <span class="o">=</span> <span class="n">dmg_so_far</span> <span class="o">/</span> <span class="n">combat_time</span><span class="p">;</span> 
+    <span class="k">return</span> <span class="n">UnitHealth</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">)</span> <span class="o">/</span> <span class="n">dps</span><span class="p">;</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_ttd_mana</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">)</span> 
+    <span class="c1">-- expected mana required until target downed = time to down / chain heal cast time * chain heal mana cost per cast </span>
+    <span class="k">return</span> <span class="n">ttd</span> <span class="o">/</span> <span class="n">cast_time</span> <span class="o">*</span> <span class="n">chr_mana</span><span class="p">;</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_mana_pool</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">mana_tide_restore_pct</span><span class="p">,</span> <span class="n">ied_proc_mana</span><span class="p">,</span> <span class="n">ied_proc_chance_pct</span><span class="p">,</span> <span class="n">mana_pot_min</span><span class="p">,</span> <span class="n">mana_pot_max</span><span class="p">)</span> 
+    <span class="c1">-- mana pool = the expected amount of remaining mana that is usable for an encounter </span>
+    <span class="k">return</span> <span class="n">UnitPower</span><span class="p">(</span><span class="s2">"player"</span><span class="p">)</span> 
+    <span class="o">+</span> <span class="n">get_mana_from_mp5</span><span class="p">(</span><span class="n">ttd</span><span class="p">)</span> 
+    <span class="o">+</span> <span class="n">get_mana_from_tide</span><span class="p">(</span><span class="n">mana_tide_restore_pct</span><span class="p">)</span> 
+    <span class="o">+</span> <span class="n">get_mana_from_ied</span><span class="p">(</span><span class="n">cast_time</span><span class="p">,</span> <span class="n">ied_proc_mana</span><span class="p">,</span> <span class="n">ied_proc_chance_pct</span><span class="p">)</span> 
+    <span class="o">+</span> <span class="n">get_mana_from_pot</span><span class="p">(</span><span class="n">mana_pot_min</span><span class="p">,</span> <span class="n">mana_pot_max</span><span class="p">);</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_mana_from_mp5</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">ttd</span><span class="p">)</span> 
+    <span class="c1">-- mana regenerated from mp5 = mana regenerated per second (while casting) * time to down seconds </span>
+    <span class="kd">local</span> <span class="n">_</span><span class="p">,</span> <span class="n">player_mp1</span> <span class="o">=</span> <span class="n">GetManaRegen</span><span class="p">(</span><span class="s2">"player"</span><span class="p">);</span> 
+    <span class="k">return</span> <span class="n">player_mp1</span> <span class="o">*</span> <span class="n">ttd</span><span class="p">;</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_mana_from_tide</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">restore_pct</span><span class="p">)</span> 
+    <span class="c1">-- mana restored from mana tide = max player mana * percentage of max player mana restored by mana tide </span>
+    <span class="kd">local</span> <span class="n">_</span><span class="p">,</span> <span class="n">cd</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetSpellCooldown</span><span class="p">(</span><span class="mi">16190</span><span class="p">);</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="n">cd</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span> 
+        <span class="k">return</span> <span class="n">UnitPowerMax</span><span class="p">(</span><span class="s2">"player"</span><span class="p">)</span> <span class="o">*</span> <span class="n">restore_pct</span><span class="p">;</span> 
+    <span class="k">end</span> 
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_mana_from_ied</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">cast_time</span><span class="p">,</span> <span class="n">proc_mana</span><span class="p">,</span> <span class="n">proc_chance_pct</span><span class="p">)</span> 
+    <span class="c1">-- expected mana from ied procs = number of chain heal casts per mp5 tick * expected ied mana restore per chain heal cast </span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">5</span> <span class="o">/</span> <span class="n">cast_time</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">proc_mana</span> <span class="o">*</span> <span class="n">proc_chance_pct</span><span class="p">);</span>         
+  <span class="k">end</span> 
+   
+  <span class="n">get_mana_from_pot</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">mana_pot_min</span><span class="p">,</span> <span class="n">mana_pot_max</span><span class="p">)</span> 
+    <span class="c1">-- expected pot restore per use = avg = (min restore + max restore) / 2 </span>
+    <span class="kd">local</span> <span class="n">_</span><span class="p">,</span> <span class="n">cd</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">GetItemCooldown</span><span class="p">(</span><span class="mi">22832</span><span class="p">);</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="n">cd</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span> 
+        <span class="k">return</span> <span class="p">(</span><span class="n">mana_pot_min</span> <span class="o">+</span> <span class="n">mana_pot_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span> 
+    <span class="k">end</span> 
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_time_diff_formatted</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">)</span> 
+    <span class="c1">-- time diff = seconds behind or ahead (based on current mana usage rate) </span>
+    <span class="kd">local</span> <span class="n">time_diff_secs</span> <span class="o">=</span> <span class="n">get_time_diff_secs</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">);</span> 
+    <span class="kd">local</span> <span class="n">sign</span> <span class="o">=</span> <span class="kc">nil</span><span class="p">;</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="n">time_diff_secs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span> 
+        <span class="n">sign</span> <span class="o">=</span> <span class="s2">"+"</span><span class="p">;</span> 
+    <span class="k">else</span> 
+        <span class="n">sign</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span> 
+    <span class="k">end</span> 
+      
+    <span class="k">return</span> <span class="nb">string.format</span><span class="p">(</span><span class="s2">"%s%.0f"</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">time_diff_secs</span><span class="p">);</span> 
+  <span class="k">end</span> 
+   
+  <span class="n">get_time_diff_secs</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">)</span> 
+    <span class="c1">-- current mana surplus or deficit = surplus mana / chain heal mana cost per cast </span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">mana_pool</span> <span class="o">-</span> <span class="n">ttd_mana</span><span class="p">)</span> <span class="o">/</span> <span class="n">chr_mana</span><span class="p">;</span> 
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<h3 id="bonus-statistic-exact-seconds-until-time-to-down-ie-how-far-ahead-or-behind-the-ideal-rank-will-take-us">Bonus statistic: exact seconds until time to down (i.e.: how far ahead or behind the ideal rank will take us)</h3>
+<p>As a bonus piece of eye candy, we can also calculate the time differential, indicating how far our viable chain heal rank is ahead or behind, in seconds.</p>
+
+<p>This is an <strong><em>incredible</em></strong> piece of useful information, &amp; gives us a more accurate judgement on which rank to use. This is because whilst there are 3 chain heal ranks, often the most OPTIMAL rank is actually a mix of 2 ranks. For instance, 60% rank 4, 40% rank 5.</p>
+
+<p>We can calculate the time delta as available mana given time-to-down reaches 0, divided by the mana cost of each chain heal cast:</p>
+
+<p>$\Delta = {mmp - mttd \over cm}$</p>
+
+<ul>
+  <li>where $mttd =$ mana required for $ttd$ to reach 0</li>
+</ul>
+
+<p>With the equation defined, we can now write the Lua equivalent, &amp; add the necessary code to drive the calculations upon trigger:</p>
+<div class="language-lua highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">get_time_diff_formatted</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">)</span> 
+  <span class="c1">-- time diff = seconds behind or ahead (based on current mana usage rate) </span>
+  <span class="kd">local</span> <span class="n">time_diff_secs</span> <span class="o">=</span> <span class="n">get_time_diff_secs</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">);</span> 
+  <span class="kd">local</span> <span class="n">sign</span> <span class="o">=</span> <span class="kc">nil</span><span class="p">;</span> 
+  <span class="k">if</span> <span class="p">(</span><span class="n">time_diff_secs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span> 
+    <span class="n">sign</span> <span class="o">=</span> <span class="s2">"+"</span><span class="p">;</span> 
+  <span class="k">else</span> 
+    <span class="n">sign</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span> 
+  <span class="k">end</span> 
+
+  <span class="k">return</span> <span class="nb">string.format</span><span class="p">(</span><span class="s2">"%s%.0f"</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">time_diff_secs</span><span class="p">);</span>
+<span class="k">end</span> 
+
+
+<span class="n">get_time_diff_secs</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">mana_pool</span><span class="p">,</span> <span class="n">ttd_mana</span><span class="p">,</span> <span class="n">chr_mana</span><span class="p">)</span> 
+  <span class="c1">-- current mana surplus or deficit = surplus mana / chain heal mana cost per cast </span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">mana_pool</span> <span class="o">-</span> <span class="n">ttd_mana</span><span class="p">)</span> <span class="o">/</span> <span class="n">chr_mana</span><span class="p">;</span>
+<span class="k">end</span> 
+
+
+<span class="k">if</span> <span class="n">UnitHealth</span><span class="p">(</span><span class="s2">"focus"</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">then</span> 
+  <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="s2">"..."</span><span class="p">;</span> 
+
+<span class="k">else</span> 
+  <span class="kd">local</span> <span class="n">cast_time</span> <span class="o">=</span> <span class="n">get_cast_time</span><span class="p">(</span><span class="n">vars</span><span class="p">.</span><span class="n">base_cast_time</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">haste_rating</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">haste_rating_conversion_rate</span><span class="p">);</span> 
+  <span class="kd">local</span> <span class="n">ttd</span> <span class="o">=</span> <span class="n">get_ttd</span><span class="p">(</span><span class="n">aura_expiry_time</span><span class="p">);</span> 
+  <span class="kd">local</span> <span class="n">mana_pool</span> <span class="o">=</span> <span class="n">get_mana_pool</span><span class="p">(</span><span class="n">ttd</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">mana_tide</span><span class="p">.</span><span class="n">restore_pct</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">ied</span><span class="p">.</span><span class="n">proc_mana</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">ied</span><span class="p">.</span><span class="n">proc_chance_pct</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">mana_pot</span><span class="p">.</span><span class="n">min</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">mana_pot</span><span class="p">.</span><span class="n">max</span><span class="p">);</span> 
+  <span class="kd">local</span> <span class="n">ideal_chr</span> <span class="o">=</span> <span class="n">get_ideal_chr</span><span class="p">(</span><span class="n">vars</span><span class="p">.</span><span class="n">chain_heals</span><span class="p">,</span> <span class="n">vars</span><span class="p">.</span><span class="n">chain_heals_count</span><span class="p">,</span> <span class="n">cast_time</span><span class="p">,</span> <span class="n">ttd</span><span class="p">,</span> <span class="n">mana_pool</span><span class="p">);</span> 
+  <span class="k">if</span> <span class="p">(</span><span class="n">ideal_chr</span> <span class="o">==</span> <span class="kc">nil</span><span class="p">)</span> <span class="k">then</span> 
+    <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="s2">"?"</span><span class="p">;</span> 
+  <span class="k">end</span> 
+   
+  <span class="k">return</span> <span class="n">ideal_chr</span><span class="p">.</span><span class="n">rank</span><span class="p">,</span> <span class="n">ideal_chr</span><span class="p">.</span><span class="n">time_diff_formatted</span><span class="p">;</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<h3 id="real-case-studies">Real case studies</h3>
+<p>Finally, with our predictive model developed &amp; kicking in action, a few (of the many) insightful moments that my formula provided are illustrated below.</p>
+
+<p><img src="https://i.imgur.com/BzTuBqV.jpeg" alt="Illidari council" title="Illidari council" /></p>
+
+<p>The Illidari Council, an encounter requiring high mental agility &amp; capacity.</p>
+<ul>
+  <li>We can see the calculated viability in the bottom-left. This image dictates good mana efficiency management throughout the fight, with rank 1 chain heal being viable, &amp; rank 2 chain being non-viable. The “-2” indicates a deficit of 2 seconds, meaning that a little bit of mana needs to be conserved at the current encounter stage.</li>
+  <li>Since rank 1 is the lowest rank, this means that some casts need to be cancelled. Often healers require innervates due to difficulty in maintaining optimal mana efficiency during this encounter, but thankfully our formula allows us to easily maintain efficiency, thereby saving a critical innervate for another raid member.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/H9sdrlO.png" alt="Illidan" title="Illidan" /></p>
+
+<p>Illidan Stormrage, final boss of Black Temple.</p>
+<ul>
+  <li>This image illustrates rank 1 as the only viable rank, but also shows large “-107” second deficit, indicating a severe mana shortage at this stage of the fight.</li>
+  <li>Since the formula also considers consumables, this deficiency highlights that over-healing was performed at an earlier stage of this encounter, &amp; for a resto shaman, this is likely during Illidan’s aerial phase or too much single-target healing during the phase 2 fire elementals, which could have been deferred to a more efficient class such as a holy paladin.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/qzZptct.png" alt="Reaver" title="Reaver" /></p>
+
+<p>Fel Reaver in Tempest Keep.</p>
+<ul>
+  <li>An excellent use case for our formula, as the damage is linear throughout, thereby improving the value of our unique prediction-based formula. Here we see that whilst rank 1 is viable, rank 2 is shown as being possible &amp; should therefore be used over rank 1 to maximize healing-per-second (HPS).</li>
+  <li>We also see a surplus of only “+2” seconds, indicating near-perfect mana efficiency management.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/guQvYgm.jpeg" alt="Kaelthas" title="Kaelthas" /></p>
+
+<p>Kael’thas, final boss of Tempest Keep.</p>
+<ul>
+  <li>Another great use case for our formula, as the encounter rewards mana preservation during most moments, but extreme healing output during certain moments. Here we see our calculated rank viability in the bottom-left, indicating rank 1 as the only viable option.</li>
+  <li>Unfortunately, it also shows a very severe deficit of “-408” seconds, indicating that we won’t be able to sustain healing to the end of the encounter. Thanks to our formula, we are able to  identify this beforehand &amp; communicate this mana restriction to our teammates ahead of time, which may involve getting a valuable innervate for an upcoming healing-intensive phase.</li>
+</ul>
+
+<h3 id="rank-progression-during-code-development-of-the-formula">Rank progression during code development of the formula</h3>
+<p>As we can expect, the predictive model significantly enhanced our healing performance over a very short period of time.</p>
+
+<p><img src="https://i.imgur.com/LocI3yj.png" alt="Illidari Council progress" title="Illidari Council progress" /></p>
+
+<p><em>Illidari Council progress</em></p>
+
+<p><img src="https://i.imgur.com/2Zljdcr.png" alt="Najentus progress" title="Najentus progress" /></p>
+
+<p><em>Najentus progress</em></p>
+
+<p><img src="https://i.imgur.com/WUtdaoZ.png" alt="Kael’thas progress" title="Kael’thas progress" /></p>
+
+<p><em>Kael’thas progress</em></p>
+
+<p><img src="https://i.imgur.com/GxObBOn.png" alt="Void Reaver progress" title="Void Reaver progress" /></p>
+
+<p><em>Void Reaver progress</em></p>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>By leveraging the TBC &amp; WA APIs, we were able to successfully implement a predictive model using math in a Lua module.</p>
+
+<p>When I look back at these 8 months of iteration, it was full of excitement, exploration &amp; experimentation. Sometimes the head scratching was too much some nights &amp; I had to take a step away &amp; just try again the next night after work.</p>
+
+<p>But the simple land of Lua kept dragging me back in, &amp; I simply can’t get enough of the language’s simplicity.</p>
+
+<p>In software engineering, it’s really hard to achieve a massive amount using only simple approaches &amp; a small amount of code. Often the most difficult part of my life is writing less code to achieve more. Figuring out the math for this module was easy, but implementing it in the simplest &amp; most optimized way was the real challenge that I enjoyed overcoming. As you can expect, the first iterations of the formula introduced latency &amp; therefore drove the need for optimisation, which is what is listed in this blog post.</p>
+
+<p>It was an iterate journey that was an absolute treat to develop, &amp; whilst I’m sad that this journey has finished, I’m also proud of overcoming the logical &amp; technical challenges it presented.</p>
+
+  </div><a class="u-url" href="/2022/09/06/designing-and-programming-an-event-driven-predictive-model-in-lua.html" hidden></a>
+
+  
+  <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+      TeX: {
+        equationNumbers: {
+          autoNumber: "AMS"
+        }
+      },
+      tex2jax: {
+      inlineMath: [ ['$', '$'] ],
+      displayMath: [ ['$$', '$$'] ],
+      processEscapes: true,
+    }
+  });
+  MathJax.Hub.Register.MessageHook("Math Processing Error",function (message) {
+      alert("Math Processing Error: "+message[1]);
+    });
+  MathJax.Hub.Register.MessageHook("TeX Jax - parse error",function (message) {
+      alert("Math Processing Error: "+message[1]);
+    });
+  </script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

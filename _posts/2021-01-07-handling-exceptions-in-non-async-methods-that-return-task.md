@@ -2,6 +2,7 @@
 title: Handling exceptions in non-async methods that return Task
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 When a task isn't awaited, it becomes a *"fire & forget"* task. This means any exceptions thrown will be raised on the Task instead.

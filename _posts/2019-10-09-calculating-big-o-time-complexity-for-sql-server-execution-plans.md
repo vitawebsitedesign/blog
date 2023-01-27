@@ -2,6 +2,7 @@
 title: Calculating Big O time complexity for SQL Server execution plans
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 We can specify how an algorithm scales with data size, by expressing its' scalability as a mathematical formula. This is called "Big O notation".
 

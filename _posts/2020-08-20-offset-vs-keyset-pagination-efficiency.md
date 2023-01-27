@@ -2,6 +2,7 @@
 title: Dear Santa, no more offset pagination - it sucks!
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 A common pagination method is to use an offset-like operator (or equivalent, such as Sqlite LIMIT):

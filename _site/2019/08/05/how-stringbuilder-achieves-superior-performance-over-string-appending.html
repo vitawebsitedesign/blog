@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>How StringBuilder achieves superior performance over string appending | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="How StringBuilder achieves superior performance over string appending" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="StringBuilder is faster than String for append operations." />
+<meta property="og:description" content="StringBuilder is faster than String for append operations." />
+<link rel="canonical" href="http://localhost:4000/2019/08/05/how-stringbuilder-achieves-superior-performance-over-string-appending.html" />
+<meta property="og:url" content="http://localhost:4000/2019/08/05/how-stringbuilder-achieves-superior-performance-over-string-appending.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-08-05T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How StringBuilder achieves superior performance over string appending" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-08-05T00:00:00+10:00","datePublished":"2019-08-05T00:00:00+10:00","description":"StringBuilder is faster than String for append operations.","headline":"How StringBuilder achieves superior performance over string appending","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/08/05/how-stringbuilder-achieves-superior-performance-over-string-appending.html"},"url":"http://localhost:4000/2019/08/05/how-stringbuilder-achieves-superior-performance-over-string-appending.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#benchmark">Benchmark</a></li>
+<li class="toc-entry toc-h2"><a href="#string">String</a></li>
+<li class="toc-entry toc-h2"><a href="#stringbuilder">StringBuilder</a></li>
+<li class="toc-entry toc-h2"><a href="#analysis">Analysis</a></li>
+<li class="toc-entry toc-h2"><a href="#should-i-always-use-stringbuilder-instead-of-string--">Should i always use StringBuilder instead of String += ?</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">How StringBuilder achieves superior performance over string appending</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-08-05T00:00:00+10:00" itemprop="datePublished">
+        Aug 5, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>StringBuilder is faster than String for append operations.</p>
+
+<h2 id="benchmark">Benchmark</h2>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">DoString</span><span class="p">(</span><span class="kt">int</span> <span class="n">loop</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">string</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"a"</span><span class="p">;</span>
+	<span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;</span> <span class="n">loop</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span>
+	<span class="p">{</span>
+		<span class="n">str</span> <span class="p">+=</span> <span class="s">"a"</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">DoStringBuilder</span><span class="p">(</span><span class="kt">int</span> <span class="n">loop</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">var</span> <span class="n">sb</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">StringBuilder</span><span class="p">(</span><span class="s">"a"</span><span class="p">);</span>
+	<span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;</span> <span class="n">loop</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span>
+	<span class="p">{</span>
+		<span class="n">sb</span><span class="p">.</span><span class="nf">Append</span><span class="p">(</span><span class="s">"a"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><a href="https://github.com/vitawebsitedesign/stringbuilder-string-benchmark">Repo</a></p>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/string-vs-stringbuilder-benchmark-summary.jpg" alt="Benchmark (textual)" title="Benchmark (textual)" /></p>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/string-vs-stringbuilder-benchmark-chart.jpg" alt="Benchmark (visual)" title="Benchmark (visual)" /></p>
+
+<p>Lets check it out.</p>
+
+<h2 id="string">String</h2>
+<p>Below is .NET 4.8 source for String.Concat(String, String) (i.e.: += overload):</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">static</span> <span class="n">String</span> <span class="nf">Concat</span><span class="p">(</span><span class="n">String</span> <span class="n">str0</span><span class="p">,</span> <span class="n">String</span> <span class="n">str1</span><span class="p">)</span> <span class="p">{</span>
+	<span class="p">...</span>
+	<span class="n">String</span> <span class="n">result</span> <span class="p">=</span> <span class="nf">FastAllocateString</span><span class="p">(</span><span class="n">str0Length</span> <span class="p">+</span> <span class="n">str1</span><span class="p">.</span><span class="n">Length</span><span class="p">);</span>
+	<span class="p">...</span>
+	<span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>So when you read the msdn String documentation:</p>
+
+<blockquote>
+  <p>A String object is called immutable …</p>
+</blockquote>
+
+<p><a href="https://docs.microsoft.com/en-us/dotnet/api/system.string?view=netframework-4.8#immutability-and-the-stringbuilder-class">https://docs.microsoft.com/en-us/dotnet/api/system.string?view=netframework-4.8#immutability-and-the-stringbuilder-class</a></p>
+
+<p>The call to FastAllocateString (unmanaged assembly code) is how string achieves immutability when using the + overload.</p>
+
+<h2 id="stringbuilder">StringBuilder</h2>
+<p>.NET 4.8 source for StringBuilder.Append(String):</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="n">StringBuilder</span> <span class="nf">Append</span><span class="p">(</span><span class="n">String</span> <span class="k">value</span><span class="p">)</span> <span class="p">{</span>
+	<span class="p">...</span>
+	<span class="k">unsafe</span> <span class="p">{</span>
+		<span class="k">fixed</span> <span class="p">(</span><span class="kt">char</span><span class="p">*</span> <span class="n">valuePtr</span> <span class="p">=</span> <span class="k">value</span><span class="p">)</span>
+		<span class="k">fixed</span> <span class="p">(</span><span class="kt">char</span><span class="p">*</span> <span class="n">destPtr</span> <span class="p">=</span> <span class="p">&amp;</span><span class="n">chunkChars</span><span class="p">[</span><span class="n">chunkLength</span><span class="p">])</span>
+			<span class="kt">string</span><span class="p">.</span><span class="nf">wstrcpy</span><span class="p">(</span><span class="n">destPtr</span><span class="p">,</span> <span class="n">valuePtr</span><span class="p">,</span> <span class="n">valueLen</span><span class="p">);</span>
+	<span class="p">}</span>
+	<span class="n">m_ChunkLength</span> <span class="p">=</span> <span class="n">newCurrentIndex</span><span class="p">;</span>
+	<span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>and…</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">internal</span> <span class="k">static</span> <span class="k">unsafe</span> <span class="k">void</span> <span class="nf">wstrcpy</span><span class="p">(</span><span class="kt">char</span> <span class="p">*</span><span class="n">dmem</span><span class="p">,</span> <span class="kt">char</span> <span class="p">*</span><span class="n">smem</span><span class="p">,</span> <span class="kt">int</span> <span class="n">charCount</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">Buffer</span><span class="p">.</span><span class="nf">Memcpy</span><span class="p">((</span><span class="kt">byte</span><span class="p">*)</span><span class="n">dmem</span><span class="p">,</span> <span class="p">(</span><span class="kt">byte</span><span class="p">*)</span><span class="n">smem</span><span class="p">,</span> <span class="n">charCount</span> <span class="p">*</span> <span class="m">2</span><span class="p">);</span> <span class="c1">// 2 used everywhere instead of sizeof(char)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="analysis">Analysis</h2>
+
+<p>We can see that for <code class="language-plaintext highlighter-rouge">StringBuilder.Append</code>, instead of re-allocating memory for a new string instance &amp; returning a pointer to the new address, it just expands the capacity at the existing memory address and appends content (i.e.: the <code class="language-plaintext highlighter-rouge">value</code> param) at the end via pointer.</p>
+
+<p>We can also see the <a href="https://docs.microsoft.com/en-us/dotnet/api/system.text.stringbuilder?view=netframework-4.8#how-stringbuilder-works">“square own capacity by 2 when i get too big”</a> code.</p>
+
+<p>Hence, both of these points prove that how StringBuilder operates compared to <code class="language-plaintext highlighter-rouge">String.Concat(String, String)</code>.</p>
+
+<h2 id="should-i-always-use-stringbuilder-instead-of-string--">Should i always use StringBuilder instead of String += ?</h2>
+<p>By performing memory capacity expansion &amp; string addition in-place (instead of allocating memory at new addresses), the .NET team has given developers an option to sacrifice immutability for speed.</p>
+
+<p>You’ll need to decide on your own, but generally <code class="language-plaintext highlighter-rouge">var str = "a" + "b";</code> is more readable than <code class="language-plaintext highlighter-rouge">var sb = new StringBuilder("a"); var str = sb.Append("b");</code></p>
+
+<p>At lower quantities, the performance difference is negligible compared to the readability gain.</p>
+
+<p>At higher quantities, the cost/benefit flips around, so you should use StringBuilder then.</p>
+
+<p>Basically once the performance difference becomes visible to the naked eye, its probably a good idea to use StringBuilder instead.</p>
+
+  </div><a class="u-url" href="/2019/08/05/how-stringbuilder-achieves-superior-performance-over-string-appending.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Button.OnClientClick vs ScriptManager.RegisterOnSubmitStatement | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Button.OnClientClick vs ScriptManager.RegisterOnSubmitStatement" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="When you need to run client-side JS in a filthy WebForms page, we got 2 primary paths - ScriptManager or OnClientClick." />
+<meta property="og:description" content="When you need to run client-side JS in a filthy WebForms page, we got 2 primary paths - ScriptManager or OnClientClick." />
+<link rel="canonical" href="http://localhost:4000/2019/08/14/onclientclick-vs-registeronsubmitstatement.html" />
+<meta property="og:url" content="http://localhost:4000/2019/08/14/onclientclick-vs-registeronsubmitstatement.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-08-14T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Button.OnClientClick vs ScriptManager.RegisterOnSubmitStatement" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-08-14T00:00:00+10:00","datePublished":"2019-08-14T00:00:00+10:00","description":"When you need to run client-side JS in a filthy WebForms page, we got 2 primary paths - ScriptManager or OnClientClick.","headline":"Button.OnClientClick vs ScriptManager.RegisterOnSubmitStatement","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/08/14/onclientclick-vs-registeronsubmitstatement.html"},"url":"http://localhost:4000/2019/08/14/onclientclick-vs-registeronsubmitstatement.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#buttononclientclick-or-scriptmanagerregisteronsubmitstatement">Button.OnClientClick() or ScriptManager.RegisterOnSubmitStatement()?</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#buttononclientclick">Button.OnClientClick</a></li>
+<li class="toc-entry toc-h3"><a href="#scriptmanagerregisteronsubmitstatement">ScriptManager.RegisterOnSubmitStatement</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#which-one-to-choose">Which one to choose?</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Button.OnClientClick vs ScriptManager.RegisterOnSubmitStatement</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-08-14T00:00:00+10:00" itemprop="datePublished">
+        Aug 14, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>When you need to run client-side JS in a filthy WebForms page, we got 2 primary paths - ScriptManager or OnClientClick.</p>
+
+<p>There seems to be some confusion though, that Button.OnClientClick can be used in place of ScriptManager.RegisterOnSubmitStatement &amp; vice versa.</p>
+
+<p>People looking at these kinds of StackOverflow posts are in either 1 of 3 situations:</p>
+<ul>
+  <li>They need to run code before form submission</li>
+  <li>They need to run code after form submission</li>
+  <li>They dont care about the timing</li>
+</ul>
+
+<p>For the last situation, <code class="language-plaintext highlighter-rouge">ScriptManager.RegisterStartupScript</code> is the most simplest &amp; should be used.</p>
+
+<p>But theres a thin line between other 2 scenarios and what is called for. And i think that explains why the StackOverflow posts often have comments from people sitting on both sides of the fence.</p>
+
+<p>Brace yourselfves - let us dive deep into the exciting world of WebForms server-side html rendering.</p>
+
+<h2 id="buttononclientclick-or-scriptmanagerregisteronsubmitstatement">Button.OnClientClick() or ScriptManager.RegisterOnSubmitStatement()?</h2>
+<p>One popular option is to use ScriptManager.RegisterOnSubmitStatement.</p>
+
+<p>The difference is that OnClientClick runs BEFORE validation, and RegisterOnSubmitStatement runs AFTER validation and BEFORE form submission.</p>
+
+<p>Lets have a look at the rendered html that WebForms sends back.</p>
+
+<h3 id="buttononclientclick">Button.OnClientClick</h3>
+<pre><code class="language-asp">&lt;asp:Button OnClientClick="return someField.value &gt; 1" /&gt;
+&lt;asp:Button OnClick="MyButton_Click" /&gt;
+</code></pre>
+
+<p>generates to</p>
+
+<pre><code class="language-asp">&lt;asp:Button onclick="DoPostBackWithOptions(...);return someField.value &gt; 1" /&gt;
+</code></pre>
+
+<p>If we need to validate a form before posting it back, this aint too useful since the check runs after the postback.</p>
+
+<p>But if we wanted to show some message like “Processing” after the form submits, OnClientClick is a good option.</p>
+
+<h3 id="scriptmanagerregisteronsubmitstatement">ScriptManager.RegisterOnSubmitStatement</h3>
+<p>Another popular option is ScriptManager.RegisterOnSubmitStatement, which may imply that it can be used in-place of Button.OnClientClick (and it can), but not in all situations:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">script</span> <span class="p">=</span> <span class="s">"return someField.value &gt; 1"</span><span class="p">;</span>
+<span class="n">Page</span><span class="p">.</span><span class="n">ClientScript</span><span class="p">.</span><span class="nf">RegisterOnSubmitStatement</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nf">GetType</span><span class="p">(),</span> <span class="k">nameof</span><span class="p">(</span><span class="n">MyFunction</span><span class="p">),</span> <span class="n">script</span><span class="p">);</span>
+</code></pre></div></div>
+
+<pre><code class="language-asp">&lt;asp:Button OnClick="MyButton_Click" /&gt;
+</code></pre>
+
+<p>generates to</p>
+
+<pre><code class="language-asp">&lt;form onSubmit="return someField.value &gt; 1"&gt;
+	&lt;asp:Button onclick="DoPostBackWithOptions(...);" /&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p>So instead of running after a postback, it hooks into <code class="language-plaintext highlighter-rouge">onSubmit</code> and we can terminate the continue to postback with whatever boolean is evaluated.</p>
+
+<p>It’s important to note that the button handler <code class="language-plaintext highlighter-rouge">MyButton_Click</code> will still fire after <code class="language-plaintext highlighter-rouge">Page_Load</code>, we are only controlling the form submission behaviour, not the <code class="language-plaintext highlighter-rouge">__doPostBack</code> or <code class="language-plaintext highlighter-rouge">DoPostBackWithOptions</code> logic.</p>
+
+<h2 id="which-one-to-choose">Which one to choose?</h2>
+<p>Instead of hitting up StackOverflow, firstly think of when your code needs to run.</p>
+
+<p>If theres no specific timing needed, just run the script on page load.</p>
+
+<p>If a specific timing is needed, and your situation has extra complexity for a number of reasons, i’d recommend reading the <a href="https://docs.microsoft.com/en-us/dotnet/api/system.web.ui.scriptmanager?view=netframework-4.8">ScriptManager API</a> and see what it has on offer.</p>
+
+  </div><a class="u-url" href="/2019/08/14/onclientclick-vs-registeronsubmitstatement.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

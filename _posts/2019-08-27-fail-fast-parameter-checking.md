@@ -2,6 +2,7 @@
 title: When to check input parameters in fail-fast systems
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 The best part about fail-fast systems is the reduced debugging effort.
 

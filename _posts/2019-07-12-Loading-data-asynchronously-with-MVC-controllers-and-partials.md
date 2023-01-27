@@ -2,6 +2,7 @@
 title: Loading data asynchronously with MVC controllers and partials
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 We can convert MVC pages to load content asynchronously, using jQuery.load(...) and PartialView.

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Climbing invisible tech debt mountains | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Climbing invisible tech debt mountains" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="We need 10% time, but startups don’t work that way. In fact, startups are bloody hard." />
+<meta property="og:description" content="We need 10% time, but startups don’t work that way. In fact, startups are bloody hard." />
+<link rel="canonical" href="http://localhost:4000/2020/10/27/climbing-invisible-tech-debt-mountains.html" />
+<meta property="og:url" content="http://localhost:4000/2020/10/27/climbing-invisible-tech-debt-mountains.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-10-27T00:00:00+11:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Climbing invisible tech debt mountains" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2020-10-27T00:00:00+11:00","datePublished":"2020-10-27T00:00:00+11:00","description":"We need 10% time, but startups don’t work that way. In fact, startups are bloody hard.","headline":"Climbing invisible tech debt mountains","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2020/10/27/climbing-invisible-tech-debt-mountains.html"},"url":"http://localhost:4000/2020/10/27/climbing-invisible-tech-debt-mountains.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#sigh-will-this-cost-me-my-arm-or-leg-today">“Sigh, will this cost me my arm or leg today?”</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#solution-1-just-refactor-more-right">Solution 1: just refactor more!…. right?</a></li>
+<li class="toc-entry toc-h2"><a href="#solution-2-moonlighting">Solution 2: moonlighting</a></li>
+<li class="toc-entry toc-h2"><a href="#solution-3-out-with-the-old-in-with-the-new">Solution 3: out with the old, in with the new!</a></li>
+<li class="toc-entry toc-h2"><a href="#solution-4-the-dead-sea-effect">Solution 4: the dead sea effect</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#what-is-the-secret-sauce">What is the secret sauce?</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Climbing invisible tech debt mountains</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2020-10-27T00:00:00+11:00" itemprop="datePublished">
+        Oct 27, 2020
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>We need 10% time, but startups don’t work that way. In fact, startups are bloody hard.</p>
+
+<p>10% time is a strategic initiative where software teams get dedicated “playtime” to reduce <a href="https://en.wikipedia.org/wiki/Technical_debt">technical debt</a> (i.e.: stuff that is a pain in the ass).</p>
+
+<p>Think of unnecessary duplicated code that makes it really expensive &amp; hard to maintain. Think of legacy tooling that just doesn’t have the productivity features of <a href="https://www.jetbrains.com">modern tools</a>. Think of performance issues that lie in spaghetti code.</p>
+
+<p>Think of the those times you sketched data flow of API’s on paper. You looked at it, &amp; questioned the meaning of life.</p>
+
+<p><a href="https://i.imgur.com/VnM6qbm.jpeg"><img src="https://i.imgur.com/VnM6qbm.jpeg" alt="1854 - Leonardo Da Vinci's remastered renaissance artwork of The Last Supper" title="1854 - Leonardo Da Vinci's remastered renaissance artwork of The Last Supper" /></a></p>
+
+<p>These are all examples of technical debt, <strong>and that’s ok</strong>. And you know what? Startups often have <em>very high</em> levels of technical debt, a tradeoff between software team morale &amp; satisfying stakeholders with flashy products that sell like hotcakes.</p>
+
+<p>But even though they have the most technical debt, they are the least likely to introduce measures to manage it. And eventually the startup (more specifically, the software engineers) hit a brick wall - a big (no… HUGE) mountain of tech debt, and they stare at the mountain, and feel the fear. It makes them consider rewriting code from scratch, which is usually what happens anyway since its cheaper than fixing legacy code.</p>
+
+<p>And then management comes around. They simply won’t allow “playtime” to fix issues. It’s just acknowledged &amp; pushed to the side. “We need feature X Y Z by yesterday”. And this is ok - but what can software engineers do in this situation?</p>
+
+<p>How do we manage technical debt when 0 time is dedicated to it?</p>
+
+<h1 id="sigh-will-this-cost-me-my-arm-or-leg-today">“Sigh, will this cost me my arm or leg today?”</h1>
+<h2 id="solution-1-just-refactor-more-right">Solution 1: just refactor more!…. right?</h2>
+<p>An often approach is to trade off <a href="https://www.scruminc.com/velocity/">sprint velocity</a> for non-visible technical debt reduction. This is usually either approved by the managers (e.g.: the product owner may approve because it’s a smaller overhead than rewriting entire codebases), or not approved by managers. If it’s <strong>NOT</strong> approved, good software engineers often take the initiative themselves, knowing that even though it’s not visible by management, technical debt kills.</p>
+
+<p>This is equivalent to a chef cleaning their table to prepare for the next dish.</p>
+
+<h2 id="solution-2-moonlighting">Solution 2: moonlighting</h2>
+<p>When not approved, software engineers can slip in some tech debt refactoring. This can happen during work hours (e.g.: 30 mins during a 9-5 window some days) or outside work hours (e.g.: day ends at <code class="language-plaintext highlighter-rouge">5pm</code>, they stay back &amp; refactor to <code class="language-plaintext highlighter-rouge">5:30 - 6:00pm</code>).</p>
+
+<p>This introduces a problem of burnout, but often if its:</p>
+<ul>
+  <li>non-mandatory</li>
+  <li>the initiative is <strong>self-motivated</strong> (e.g.: something is really itching them &amp; fixing the tech debt brings them more happiness than spending the 30 mins at home watching Netflix)</li>
+  <li>they are working on <em>“their baby”</em> (i.e.: the project is something that they deeply care about, they gave birth to the repo, &amp; they are the kings/queens of that domain)</li>
+</ul>
+
+<p>Then it’s often a good approach. The software engineer is happy, their colleagues are happy, &amp; managers are usually happy to let someone overwork a bit. <strong>EVERYONES HAPPY!</strong> Additionally, good managers will know of <a href="https://en.everybodywiki.com/Dead_Sea_Effect">the Dead Sea effect</a> &amp; the importance of turnover. They will approve overworking, but also drop a hint to them after slapping their back: “…but make sure to not burn out”.</p>
+
+<h2 id="solution-3-out-with-the-old-in-with-the-new">Solution 3: out with the old, in with the new!</h2>
+<p>Sometimes the tech debt is just so bad that its actually cheaper to just rewrite the entire repo(s) from scratch.</p>
+
+<p>Considered a high-risk low-reward move, its difficult to justify this option to management. Often bad engineers just do it without approval, expecting a big congratulations upon presenting their work to their colleagues. BACK SLAPS ALL AROUND.</p>
+
+<p>Unfortunately getting rewrites to replace the existing test &amp; prod instances is complicated, &amp; usually rewrites don’t have good test coverage (<em>naughty word</em>).</p>
+
+<p><a href="https://i.imgur.com/vcia2Ny.jpg"><img src="https://i.imgur.com/vcia2Ny.jpg" alt="Software decisions is all about prioritising tradeoffs. Free lunches are welcome, but rare" title="Software decisions is all about prioritising tradeoffs. Free lunches are welcome, but rare" /></a></p>
+
+<p>I’ve seen this work before, but the incredible expense is always an important factor to consider before creating those Jira epics.</p>
+
+<p>Expense, with a capital “E”.</p>
+
+<h2 id="solution-4-the-dead-sea-effect">Solution 4: the dead sea effect</h2>
+<p>When all 3 above approaches fail, software engineers get low morale. Its like world war, &amp; the engineers are in the trenches. They got no clean clothes, there’s bullets flying over their head on a daily basis, there’s not much food available (&amp; what is available is infested with vermin). Oh god no not again!</p>
+
+<p><a href="https://i.imgur.com/R84oL6o.jpeg"><img src="https://i.imgur.com/R84oL6o.jpeg" alt="We've all been like this at some stage in our lives. But a company that intentionally does this will have impressive amounts of turnover" title="We've all been like this at some stage in our lives. But a company that intentionally does this will have impressive amounts of turnover" /></a></p>
+
+<p>It’s just a terrible situation to be in. And it often results in turnover.</p>
+
+<p>And of course, seeing comrades leave makes you question whether you should stay or step up to the next level in your life.</p>
+
+<p><a href="https://i.imgur.com/xgHt9QN.jpeg"><img src="https://i.imgur.com/xgHt9QN.jpeg" alt="The Dead Sea effect doubles as a domino effect. 1 engineers leaves, then 2, then 4" title="The Dead Sea effect doubles as a domino effect. 1 engineers leaves, then 2, then 4" /></a></p>
+
+<p>This is the end-game that all startups risk when they simply ignore technical debt, pretend that it doesn’t exist, &amp; just whip software engineers even when they’re down. Often to stop the incredible turnover, they have to increase monetary compensation. And even then, thats not guaranteed to solve the problem.</p>
+
+<p>Often, happiness is more preferred than money. In other words, a good workplace (daily happiness) is more important than compensation, aslong as the compensation is “decent” enough for the individuals standard of living &amp; financial/tangible goals.</p>
+
+<h1 id="what-is-the-secret-sauce">What is the secret sauce?</h1>
+<p>If you’re at ground zero, solutions 1 &amp; 2 are the good choices.</p>
+
+<p>You can refactor more by changing your approach to each ticket. For example, before opening each PR you review it yourself &amp; do a final “pass” to cleanup any remaining code. You can refactor code that’s not related to your ticket, whilst still staying out of <a href="https://www.dictionary.com/e/slang/rabbit-hole/">the rabbit hole traps</a> that often come out of the tall grass &amp; snatch you.</p>
+
+<p>You can also moonlight. Even though a lot of software companies have a dedicated work window (e.g.: <code class="language-plaintext highlighter-rouge">9am to 5pm</code>, <code class="language-plaintext highlighter-rouge">8am to 6pm</code>), software engineers often perform additional work. Weekend production issues, late night team releases, early morning “all hands on deck” situations for critical releases the previous night. And since moonlighting is a self-initiative on your own “baby” (repos), its easy to be motivated to make it nice &amp; pretty.</p>
+
+<p>Startups have the <strong>0 time, we want everything</strong> problem. Theres just not enough time to do <em>everything</em> (even if you increase headcount). In the end, there are some good approaches to tackling tech debt, &amp; whilst the 3 solutions above don’t suit all situations, there should be at least 1 that is correct, efficient, effective &amp; a perfect match for your depression.</p>
+
+<p>I wish you the best of luck, you’ll need it.</p>
+
+
+  </div><a class="u-url" href="/2020/10/27/climbing-invisible-tech-debt-mountains.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

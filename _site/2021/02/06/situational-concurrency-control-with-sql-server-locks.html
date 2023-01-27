@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Situational concurrency control with SQL Server locks | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Situational concurrency control with SQL Server locks" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Lock control Locks are a trade between concurrency and performance. Locks take up space (depending on the table’s primary key), and they have an efficiency overhead." />
+<meta property="og:description" content="Lock control Locks are a trade between concurrency and performance. Locks take up space (depending on the table’s primary key), and they have an efficiency overhead." />
+<link rel="canonical" href="http://localhost:4000/2021/02/06/situational-concurrency-control-with-sql-server-locks.html" />
+<meta property="og:url" content="http://localhost:4000/2021/02/06/situational-concurrency-control-with-sql-server-locks.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-02-06T00:00:00+11:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Situational concurrency control with SQL Server locks" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2021-02-06T00:00:00+11:00","datePublished":"2021-02-06T00:00:00+11:00","description":"Lock control Locks are a trade between concurrency and performance. Locks take up space (depending on the table’s primary key), and they have an efficiency overhead.","headline":"Situational concurrency control with SQL Server locks","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2021/02/06/situational-concurrency-control-with-sql-server-locks.html"},"url":"http://localhost:4000/2021/02/06/situational-concurrency-control-with-sql-server-locks.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#lock-control">Lock control</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#read-uncommitted">Read Uncommitted</a></li>
+<li class="toc-entry toc-h2"><a href="#read-committed-default">Read Committed (default)</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#whew-crisis-averted">Whew! Crisis averted…?</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#repeatable-read">Repeatable Read</a></li>
+<li class="toc-entry toc-h2"><a href="#serializable">Serializable</a></li>
+</ul>
+</li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Situational concurrency control with SQL Server locks</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2021-02-06T00:00:00+11:00" itemprop="datePublished">
+        Feb 6, 2021
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h1 id="lock-control">Lock control</h1>
+<p>Locks are a trade between concurrency and performance. Locks take up <em>space</em> (depending on the table’s primary key), and they have an <em>efficiency</em> overhead.</p>
+
+<p>SQL Server allows you to control this “trade”, by determining lock behaviour through a “setting” called <a href="https://docs.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql?view=sql-server-ver15">isolation levels</a>.</p>
+
+<p>So depending on existing application requirements &amp; future requirements volatility, choosing the <strong>appropriate</strong> level could be useful.</p>
+
+<p>TLDR:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Read uncommited</code>: no shared or exclusive locks are used</li>
+  <li><code class="language-plaintext highlighter-rouge">Read committed</code>: shared and exclusive locks are used</li>
+  <li><code class="language-plaintext highlighter-rouge">Repeatable Read</code>: shared locks are held until end of transaction</li>
+  <li><code class="language-plaintext highlighter-rouge">Serializable</code>: locks now cover a range of rows (instead of just singular rows)</li>
+</ul>
+
+<blockquote>
+  <p>There is also a level called “Snapshot”, which involves new SQL Server <a href="https://support.esri.com/en/technical-article/000013039">settings</a> &amp; a concept called “row versioning”. For simplicity, Snapshot wont be covered here</p>
+</blockquote>
+
+<h2 id="read-uncommitted">Read Uncommitted</h2>
+<p>Maximum speed! No locks means no overhead, but it also means no concurrency control. Its a free-for-all!</p>
+
+<p>Since there’s no locks, rows can be updated &amp; read mid-transaction. For example:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Transaction start</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Update row</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row</td>
+    </tr>
+    <tr>
+      <td>Commit transaction</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This is fine, transaction B still read the value which still ends up being correct anyways.</p>
+
+<p>But what if transaction A fails?</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Transaction start</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Update row</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row</td>
+    </tr>
+    <tr>
+      <td>Tries to commit transaction</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Error, rolls back transaction</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Ah nuts! Now transaction B has the wrong value! If this situation would be a problem for your application, you might have to use a <em>stricter</em> isolation level…</p>
+
+<h2 id="read-committed-default">Read Committed (default)</h2>
+<p>As the default level, shared &amp; exclusive locks are used. Lets continue our adventure from last time:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Transaction start</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Update row</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row</td>
+    </tr>
+    <tr>
+      <td>Tries to commit transaction</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Error, rolls back transaction</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>We  guchi, guchi wearing prada.</p>
+
+<p>Transaction A places an exclusive lock on the row, then Transaction B tries to read the row (by placing a shared lock). Since exclusive &amp; shared locks are incompatible, transaction B sits there, patiently, in silence, until transaction A finishes its’ dance.</p>
+
+<p>And hence, transaction B would finally resume, &amp; read the correct value.</p>
+
+<h3 id="whew-crisis-averted">Whew! Crisis averted…?</h3>
+
+<p>Crap. The above example is just 1 of the 2 possible scenarios. The other scenario is that Transaction B starts first:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td>Transaction start</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row</td>
+    </tr>
+    <tr>
+      <td>Update row</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>In read committed, shared locks are actually released immediately after the read. To think of this another way:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td>Transaction start</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Shared lock released</td>
+    </tr>
+    <tr>
+      <td>Update row (exclusive lock)</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Transaction end</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>As mentioned before, exclusive &amp; shared locks are incompatible. Whoever arrives 2nd has to wait.</p>
+
+<p>But since shared locks are released immediately after the read, Transaction A still gets dibs &amp; can update the row - even though Transaction B is still halfway through!</p>
+
+<p>This becomes an issue, because if Transaction B were to do another read <strong>after</strong> the row gets updated, it would read different data:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td>Transaction start</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Shared lock released</td>
+    </tr>
+    <tr>
+      <td>Transaction start</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Update row (exclusive lock)</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Transaction end</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Transaction end</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>So if Transaction B were something like:</p>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">val</span> <span class="p">=</span> <span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="n">QueryAsync</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;(</span><span class="s">"SELECT col FROM table"</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="p">==</span> <span class="k">true</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>   
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>And then Transaction A barged in halfway through (before the <code class="language-plaintext highlighter-rouge">IF</code> statement):</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="nf">ExecuteAsync</span><span class="p">(</span><span class="s">"UPDATE table SET col = 0"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Then the <code class="language-plaintext highlighter-rouge">IF</code> statement (in Transaction A) would return true, even though Transaction B set the column to <code class="language-plaintext highlighter-rouge">0</code> beforehand.</p>
+
+<p><em>Next week, on season 2 of transactions attacking eachother…</em></p>
+
+<h2 id="repeatable-read">Repeatable Read</h2>
+<p>Shared locks are held until end of transaction. Continuing our adventure:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td>Transaction start</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Shared lock released</td>
+    </tr>
+    <tr>
+      <td>Transaction start</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Update row (exclusive lock)</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Transaction end</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Transaction end</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>now becomes:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Transaction A</th>
+      <th>Transaction B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td>Transaction start</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td><code class="language-plaintext highlighter-rouge">Shared lock NOT released</code></td>
+    </tr>
+    <tr>
+      <td>Transaction start</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Update row (exclusive lock)</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Transaction end</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Read row (shared lock)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Transaction end</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>And we’re good! When Transaction A tries to apply exclusive lock, it has to wait there patiently because the Transaction B’s shared lock is still on the row.</p>
+
+<p>So</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">val</span> <span class="p">=</span> <span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="n">QueryAsync</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;(</span><span class="s">"SELECT col FROM table"</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="p">==</span> <span class="k">true</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>   
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Cant be “interrupted” halfway through, &amp; the <code class="language-plaintext highlighter-rouge">IF</code> statement works as expected. Only once Transaction B ends, the shared lock is released, then Transaction A’s exclusive lock is applied to do the update:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="nf">ExecuteAsync</span><span class="p">(</span><span class="s">"UPDATE table SET col = 0"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="serializable">Serializable</h2>
+<p>This isolation level takes the cake. Database developers get down on their knees &amp; pray to the SQL gods for whoever invented this level!</p>
+
+<p>The previous levels covered common cases, but there’s 1 extra scenario that often happens in applications, &amp; thats when a SQL statement <code class="language-plaintext highlighter-rouge">SELECT</code> a range of rows, &amp; then another Transaction <code class="language-plaintext highlighter-rouge">INSERT</code> rows in that range.</p>
+
+<p>Example table:
+| Id | Value |
+|—-|——-|
+| 1  | 1     |
+| 2  | 100   |</p>
+
+<p>Then a <code class="language-plaintext highlighter-rouge">SELECT</code>:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">rows</span> <span class="p">=</span> <span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="n">QueryAsync</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;(</span><span class="s">"SELECT Id FROM table WHERE Value BETWEEN 1 AND 100"</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">rows</span><span class="p">.</span><span class="nf">Count</span><span class="p">()</span> <span class="p">==</span> <span class="m">2</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Which grabs rows with <code class="language-plaintext highlighter-rouge">Id</code> 1 &amp; 2. No problems so far right?</p>
+
+<p>Oh wait a second, whats that thing called when multiple transactions bump heads? Oh yeah, HELL</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="nf">ExecuteAsync</span><span class="p">(</span><span class="s">"INSERT INTO table (Value) VALUES (10)"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>If this runs before the <code class="language-plaintext highlighter-rouge">IF</code> statement, the <code class="language-plaintext highlighter-rouge">IF</code> statement will return <code class="language-plaintext highlighter-rouge">true</code>. The original <code class="language-plaintext highlighter-rouge">SELECT</code> got 2 rows, but now there’s 3 rows in DB, &amp; now the <code class="language-plaintext highlighter-rouge">IF</code> statement is checked with outdated data!</p>
+
+<p>Why must programming be so complicated! Nothing to worry, because the Microsoft SQL Server devs took some good legal substances &amp; hallucinated a new isolation level to make the <code class="language-plaintext highlighter-rouge">INSERT</code> wait until the first transaction finishes.</p>
+
+<p>And thus <code class="language-plaintext highlighter-rouge">SERIALIZABLE</code> was born. To recap the <code class="language-plaintext highlighter-rouge">SELECT</code> again:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="n">QueryAsync</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;(</span><span class="s">"SELECT Id FROM table WHERE Value BETWEEN 1 AND 100"</span><span class="p">);</span>
+</code></pre></div></div>
+<p>In Serializable, shared &amp; exclusive locks apply to a range of rows (instead of a single row). This means that if another transaction tries to shove another row between that range, it will be blocked.</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">await</span> <span class="n">db</span><span class="p">.</span><span class="nf">ExecuteAsync</span><span class="p">(</span><span class="s">"INSERT INTO table (Value) VALUES (10)"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Boom! Problem solved.</p>
+
+  </div><a class="u-url" href="/2021/02/06/situational-concurrency-control-with-sql-server-locks.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

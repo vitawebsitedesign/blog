@@ -2,6 +2,7 @@
 title: Button.OnClientClick vs ScriptManager.RegisterOnSubmitStatement
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 When you need to run client-side JS in a filthy WebForms page, we got 2 primary paths - ScriptManager or OnClientClick.
 

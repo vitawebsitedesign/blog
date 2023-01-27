@@ -2,6 +2,7 @@
 title: TDD aint a silver bullet - its a bronze bullet
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 You ever hear someone relay a quote from a famous person, apply it to a situation while disregarding context, & then discover they got burned? Example:
