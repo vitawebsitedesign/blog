@@ -2,6 +2,8 @@ This is a Software Engineering blog by Michael Nguyen.
 
 [https://vitawebsitedesign.github.io/blog/](https://vitawebsitedesign.github.io/blog/).
 
+[![Jekyll Deploy](https://github.com/vitawebsitedesign/blog/actions/workflows/deploy-v3.yml/badge.svg)](https://github.com/vitawebsitedesign/blog/actions/workflows/deploy-v3.yml)
+
 # Getting started
 To build+serve locally:
 ```bash
