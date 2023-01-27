@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Loading data asynchronously with MVC controllers and partials | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Loading data asynchronously with MVC controllers and partials" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="We can convert MVC pages to load content asynchronously, using jQuery.load(…) and PartialView." />
+<meta property="og:description" content="We can convert MVC pages to load content asynchronously, using jQuery.load(…) and PartialView." />
+<link rel="canonical" href="vitawebsitedesign.github.io/blog/2019/07/12/Loading-data-asynchronously-with-MVC-controllers-and-partials.html" />
+<meta property="og:url" content="vitawebsitedesign.github.io/blog/2019/07/12/Loading-data-asynchronously-with-MVC-controllers-and-partials.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-07-12T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Loading data asynchronously with MVC controllers and partials" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-07-12T00:00:00+00:00","datePublished":"2019-07-12T00:00:00+00:00","description":"We can convert MVC pages to load content asynchronously, using jQuery.load(…) and PartialView.","headline":"Loading data asynchronously with MVC controllers and partials","mainEntityOfPage":{"@type":"WebPage","@id":"vitawebsitedesign.github.io/blog/2019/07/12/Loading-data-asynchronously-with-MVC-controllers-and-partials.html"},"url":"vitawebsitedesign.github.io/blog/2019/07/12/Loading-data-asynchronously-with-MVC-controllers-and-partials.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/blog/assets/main.css">
+  <link rel="stylesheet" href="/blog/assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="vitawebsitedesign.github.io/blog/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/blog/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#parallelism-options">Parallelism options</a></li>
+<li class="toc-entry toc-h2"><a href="#sync-mvc-example-w-existing-partial">Sync MVC example (w/ existing partial)</a></li>
+<li class="toc-entry toc-h2"><a href="#conversion-process">Conversion process</a></li>
+<li class="toc-entry toc-h2"><a href="#lifecycle">Lifecycle:</a></li>
+<li class="toc-entry toc-h2"><a href="#example-pre-es6">Example (pre ES6)</a></li>
+<li class="toc-entry toc-h2"><a href="#how-far-can-i-take-auto-properties-after-converting">How far can i take auto-properties after converting?</a></li>
+<li class="toc-entry toc-h2"><a href="#should-i-make-query-params-strongly-typed-too">Should i make query params strongly typed too?</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Loading data asynchronously with MVC controllers and partials</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-07-12T00:00:00+00:00" itemprop="datePublished">
+        Jul 12, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>We can convert MVC pages to load content asynchronously, using jQuery.load(…) and PartialView.</p>
+
+<h2 id="parallelism-options">Parallelism options</h2>
+<p>Since jQuery.load is XHR via jQuery.Deferred(), we can run multiple calls.
+If you dont need to support browsers, you can also use promises or async/await pattern</p>
+
+<h2 id="sync-mvc-example-w-existing-partial">Sync MVC example (w/ existing partial)</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">MyController</span><span class="p">.</span><span class="n">cs</span><span class="p">:</span>
+<span class="p">[</span><span class="n">HttpGet</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">ActionView</span><span class="p">&gt;</span> <span class="nf">Index</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="nf">View</span><span class="p">(</span><span class="s">"Index"</span><span class="p">,</span> <span class="k">await</span> <span class="nf">GetModel</span><span class="p">());</span>
+<span class="p">}</span>
+
+<span class="k">private</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">MyModel</span><span class="p">&gt;</span> <span class="nf">GetModel</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">1000</span><span class="p">);</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="nf">MyModel</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">apple</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span>
+    <span class="n">taco</span> <span class="p">=</span> <span class="m">2</span>
+  <span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Index</span><span class="p">.</span><span class="n">cshtml</span><span class="p">:</span>
+<span class="err">@</span><span class="p">{</span> <span class="n">Html</span><span class="p">.</span><span class="nf">RenderAction</span><span class="p">(</span><span class="s">"_MyPartial1"</span><span class="p">);</span> <span class="p">}</span>
+<span class="err">@</span><span class="p">{</span> <span class="n">Html</span><span class="p">.</span><span class="nf">RenderAction</span><span class="p">(</span><span class="s">"_MyPartial2"</span><span class="p">);</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">_MyPartial1</span><span class="p">.</span><span class="n">cshtml</span><span class="p">:</span>
+<span class="n">@Model</span><span class="p">.</span><span class="n">Apple</span>
+</code></pre></div></div>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">_MyPartial2</span><span class="p">.</span><span class="n">cshtml</span><span class="p">:</span>
+<span class="n">@Model</span><span class="p">.</span><span class="n">Taco</span>
+</code></pre></div></div>
+
+<h2 id="conversion-process">Conversion process</h2>
+<ol>
+  <li>Split GetModel code into PartialView routes</li>
+</ol>
+
+<p>The View(…) overload we’ll use is string, object.</p>
+
+<p>PartialView inherits from ActionView. Always use the most base return signature possible.</p>
+
+<p>If you need state between form submits, you’ll also need an model param in Index route.</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="n">HttpGet</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">ActionView</span><span class="p">&gt;</span> <span class="nf">Index</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="nf">View</span><span class="p">(</span><span class="s">"Index"</span><span class="p">,</span> <span class="k">await</span> <span class="nf">GetModel</span><span class="p">());</span>
+<span class="p">}</span>
+
+<span class="p">[</span><span class="n">HttpGet</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">ActionResult</span><span class="p">&gt;</span> <span class="nf">GetAppleModel</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">1000</span><span class="p">);</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="nf">AppleModel</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">Apple</span> <span class="p">=</span> <span class="m">1</span>
+  <span class="p">};</span>
+<span class="p">}</span>
+
+<span class="p">[</span><span class="n">HttpGet</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">ActionResult</span><span class="p">&gt;</span> <span class="nf">GetTacoModel</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">1000</span><span class="p">);</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="nf">TacoModel</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">Taco</span> <span class="p">=</span> <span class="m">2</span>
+  <span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="lifecycle">Lifecycle:</h2>
+<ol>
+  <li>initial page load</li>
+  <li>index route</li>
+  <li>ajax calls routes</li>
+  <li>routes fetch data asynchronously in parallel</li>
+  <li>jQuery.deferred done</li>
+  <li>partial html rendered</li>
+  <li>form submit, which may start process from beginning again (index route), or just a route if using partial update</li>
+  <li>Call routes via jQuery.load</li>
+</ol>
+
+<p>It’s important to note that $.ready cant be relied on as a hook for partials. Usually the document loads BEFORE partials load.
+This means we need to use <script></script> inside partial (instead of @section scripts { }), where $.ready is still used (with the callback firing immediately)
+This applies to any JS that loads stuff at runtime</p>
+
+<h2 id="example-pre-es6">Example (pre ES6)</h2>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">@section</span> <span class="n">scripts</span> <span class="p">{</span>
+<span class="p">&lt;</span><span class="n">script</span><span class="p">&gt;</span>
+	<span class="err">$</span><span class="p">(</span><span class="n">document</span><span class="p">).</span><span class="nf">ready</span><span class="p">(</span><span class="nf">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="err">$</span><span class="p">(</span><span class="err">'</span><span class="p">.</span><span class="n">content</span><span class="p">-</span><span class="n">apple</span><span class="err">'</span><span class="p">).</span><span class="nf">load</span><span class="p">(</span><span class="err">'</span><span class="n">GetAppleModel</span><span class="err">'</span><span class="p">,</span> <span class="err">'</span><span class="n">MyController</span><span class="err">'</span><span class="p">);</span>
+		<span class="err">$</span><span class="p">(</span><span class="err">'</span><span class="p">.</span><span class="n">content</span><span class="p">-</span><span class="n">taco</span><span class="err">'</span><span class="p">).</span><span class="nf">load</span><span class="p">(</span><span class="err">'</span><span class="n">GetTacoModel</span><span class="err">'</span><span class="p">,</span> <span class="err">'</span><span class="n">MyController</span><span class="err">'</span><span class="p">);</span>
+	<span class="p">});</span>
+<span class="p">&lt;/</span><span class="n">script</span><span class="p">&gt;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>We can make this more strongly typed via razor engine + c# nameof:</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">@section</span> <span class="n">scripts</span> <span class="p">{</span>
+<span class="p">&lt;</span><span class="n">script</span><span class="p">&gt;</span>
+	<span class="err">$</span><span class="p">(</span><span class="n">document</span><span class="p">).</span><span class="nf">ready</span><span class="p">(</span><span class="nf">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="err">$</span><span class="p">(</span><span class="err">'</span><span class="p">.</span><span class="n">content</span><span class="p">-</span><span class="n">apple</span><span class="err">'</span><span class="p">).</span><span class="nf">load</span><span class="p">(</span><span class="nf">@nameof</span><span class="p">(</span><span class="n">MyController</span><span class="p">.</span><span class="n">GetAppleModel</span><span class="p">),</span> <span class="nf">@nameof</span><span class="p">(</span><span class="n">MyController</span><span class="p">));</span>
+		<span class="err">$</span><span class="p">(</span><span class="err">'</span><span class="p">.</span><span class="n">content</span><span class="p">-</span><span class="n">taco</span><span class="err">'</span><span class="p">).</span><span class="nf">load</span><span class="p">(</span><span class="nf">@nameof</span><span class="p">(</span><span class="n">MyController</span><span class="p">.</span><span class="n">GetTacoModel</span><span class="p">),</span> <span class="nf">@nameof</span><span class="p">(</span><span class="n">MyController</span><span class="p">));</span>
+	<span class="p">});</span>
+<span class="p">&lt;/</span><span class="n">script</span><span class="p">&gt;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This way, if we rename controller or method, razor is also updated.</p>
+
+<p>Since code is always growing due to businesses forcing new requirements to out-compete other businesses for profit, code maintainability and productivity are important factors. We can improve those code-ilities with code like this.</p>
+
+<h2 id="how-far-can-i-take-auto-properties-after-converting">How far can i take auto-properties after converting?</h2>
+
+<p>Once routes with parameters come into play, MVC cant auto-map URL parameters to route parameter objects, if the model property does not have private setter.</p>
+
+<p>Model properties should always have getters AND setters where required. Otherwise remove property setters.</p>
+
+<h2 id="should-i-make-query-params-strongly-typed-too">Should i make query params strongly typed too?</h2>
+
+<p>Consider:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span><span class="p">(</span><span class="dl">'</span><span class="s1">.content</span><span class="dl">'</span><span class="p">).</span><span class="nx">load</span><span class="p">(@</span><span class="nd">nameof</span><span class="p">(</span><span class="nx">MyController</span><span class="p">.</span><span class="nx">GetModel</span><span class="p">)?</span><span class="nx">Model</span><span class="p">.</span><span class="nx">Apple</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="p">@</span><span class="nd">nameof</span><span class="p">(</span><span class="nx">MyController</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p>Assuming we’ve used a Model predirective in our cshtml.</p>
+
+<p>Here, Apple is a property in a POCO</p>
+
+<p>But models are usually POCO’s when content is loaded synchronously.</p>
+
+<p>Once code is changed to load content asynchronously, we have more routes.</p>
+
+<p>And this means those big monolithic models now become “complex” &amp; nested models.</p>
+
+<h3 id="example">Example</h3>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">IndexModel</span> <span class="p">{</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Apple</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span><span class="k">set</span><span class="p">;}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Now consider this:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">AppleModel</span> <span class="p">{</span>
+	<span class="k">public</span> <span class="kt">int</span> <span class="n">Apple</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span><span class="k">set</span><span class="p">;}</span>
+<span class="p">}</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">IndexModel</span> <span class="p">{</span>
+	<span class="k">public</span> <span class="n">AppleModel</span> <span class="n">AppleModel</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span><span class="k">set</span><span class="p">;}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>MVC auto-maps complex model properties to URL params by using dot syntax. For a GET route, this would be:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/root/MyController/GetAppleModel?AppleModel.Apple=1
+</code></pre></div></div>
+
+<p>Making this strongly typed means making the $.load like:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$.load(@nameof(MyController.GetAppleModel)?@(nameof(IndexModel.AppleModel)).@nameof(AppleModel.Apple)=@Model.AppleModel.Apple
+</code></pre></div></div>
+
+<p>Here, strongly-typed code has actually degraded maintainability &amp; productivity due to lower readability.</p>
+
+<p>Sticking to non-strongly-typed strings are probably better for complex POCOs:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span><span class="p">.</span><span class="nx">load</span><span class="p">(@</span><span class="nd">nameof</span><span class="p">(</span><span class="nx">MyController</span><span class="p">.</span><span class="nx">GetAppleModel</span><span class="p">)?</span><span class="nx">AppleModel</span><span class="p">.</span><span class="nx">Apple</span><span class="o">=</span><span class="p">@</span><span class="nd">Model</span><span class="p">.</span><span class="nx">AppleModel</span><span class="p">.</span><span class="nx">Apple</span>
+</code></pre></div></div>
+
+<p>And only use strongly typed JS URL parameters for POCO’s.</p>
+
+  </div><a class="u-url" href="/blog/2019/07/12/Loading-data-asynchronously-with-MVC-controllers-and-partials.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/blog/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>The illusion of reusability be a harsh mistress | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="The illusion of reusability be a harsh mistress" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Reusable libraries are often created to reduce development workload across multiple teams." />
+<meta property="og:description" content="Reusable libraries are often created to reduce development workload across multiple teams." />
+<link rel="canonical" href="vitawebsitedesign.github.io/blog/2021/03/05/the-illusion-of-reusability-be-a-harsh-mistress.html" />
+<meta property="og:url" content="vitawebsitedesign.github.io/blog/2021/03/05/the-illusion-of-reusability-be-a-harsh-mistress.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-03-05T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="The illusion of reusability be a harsh mistress" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2021-03-05T00:00:00+00:00","datePublished":"2021-03-05T00:00:00+00:00","description":"Reusable libraries are often created to reduce development workload across multiple teams.","headline":"The illusion of reusability be a harsh mistress","mainEntityOfPage":{"@type":"WebPage","@id":"vitawebsitedesign.github.io/blog/2021/03/05/the-illusion-of-reusability-be-a-harsh-mistress.html"},"url":"vitawebsitedesign.github.io/blog/2021/03/05/the-illusion-of-reusability-be-a-harsh-mistress.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/blog/assets/main.css">
+  <link rel="stylesheet" href="/blog/assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="vitawebsitedesign.github.io/blog/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/blog/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#simple-example">Simple example</a></li>
+<li class="toc-entry toc-h1"><a href="#illusions">Illusions</a></li>
+<li class="toc-entry toc-h1"><a href="#prison-break">Prison break</a></li>
+<li class="toc-entry toc-h1"><a href="#brilliance-encased-in-simplicity">Brilliance encased in simplicity</a></li>
+<li class="toc-entry toc-h1"><a href="#i-didnt-hear-no-bell">I didn’t hear no bell</a></li>
+<li class="toc-entry toc-h1"><a href="#whew-that-was-a-close-one">“Whew, that was a close one!”</a></li>
+<li class="toc-entry toc-h1"><a href="#absolute-disaster">Absolute disaster!</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#1-staff-cant-do-their-job-to-the-best-of-their-ability">1. Staff cant do their job to the best of their ability</a></li>
+<li class="toc-entry toc-h3"><a href="#2-the-technical-debt-eventually-become-too-visible--starts-hindering-development-agility-to-the-point-where-all-current-projects-get-dropped">2. The technical debt eventually become too visible, &amp; starts hindering development agility to the point where all current projects get dropped</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#conclusion">Conclusion</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The illusion of reusability be a harsh mistress</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2021-03-05T00:00:00+00:00" itemprop="datePublished">
+        Mar 5, 2021
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Reusable libraries are often created to reduce development workload across multiple teams.</p>
+
+<p>Reusable items in the library can be used in an <em>almost-infinite</em> combination of scenarios (both currently known &amp; possible new future scenarios), which presents a unique challenge - <strong>how do we design to accommodate for all scenarios?</strong></p>
+
+<p>And on top of the scenario challenge, devs also need to ensure the library <strong><em>consumers</em></strong> can actually use it <strong>without</strong> having to make unreasonable tradeoffs. <strong>Flexibility</strong>. That way it presents an attractable alternative in project plans.</p>
+
+<p>To solve both the scenario &amp; flexibility challenges, library devs often intentionally make the reusable items simpler, &amp; defer extra behaviour/options to the consumer (e.g.: Facebook has done a fantastic job of Reacts’ <a href="https://reactjs.org/docs/composition-vs-inheritance.html">composition vs inheritance</a>).</p>
+
+<p>This post explores an example of reusable library development hell - a reusable front-end component library.</p>
+
+<h1 id="simple-example">Simple example</h1>
+<p>You are part of the dev team that needs to deliver 1 component - a button:</p>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;button&gt;</span>My button<span class="nt">&lt;/button&gt;</span>
+</code></pre></div></div>
+
+<p><a href="https://i.imgur.com/K9FWMzI.png"><img src="https://i.imgur.com/K9FWMzI.png" alt="Button" title="Button" /></a></p>
+
+<p>No requirement for padding or margin yet.</p>
+
+<p>The devs huddle around, &amp; decide to maximize consumer dev speed by hard-coding options. In this case, the devs (us/we) have decided to hard-code padding &amp; margin:</p>
+
+<p><a href="https://i.imgur.com/iBvJ0fP.png"><img src="https://i.imgur.com/iBvJ0fP.png" alt="Button with padding and margin" title="Button with padding and margin" /></a></p>
+
+<ul>
+  <li>Green = padding</li>
+  <li>Orange = margin</li>
+</ul>
+
+<p>Now the consumers can just copy-paste the component, right? They dont even <strong><em>need</em></strong> to set padding or margin themselves - what a time saver!
+At the moment, it only needs to be used in <code class="language-plaintext highlighter-rouge">1</code> product with <code class="language-plaintext highlighter-rouge">3</code> specific scenarios.
+We cross-check with wireframes The UI team sent us, just to ensure our button can be re-used in the necessary scenarios:</p>
+
+<hr />
+<p><a href="https://i.imgur.com/9pjAYZA.png"><img src="https://i.imgur.com/9pjAYZA.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p><code class="language-plaintext highlighter-rouge">Wrapper elements beside &amp; below our button</code></p>
+
+<hr />
+<p><a href="https://i.imgur.com/yyVI0Lf.png"><img src="https://i.imgur.com/yyVI0Lf.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p><code class="language-plaintext highlighter-rouge">Wrapper element beside our button</code></p>
+
+<hr />
+<p><a href="https://i.imgur.com/EbHgo6e.png"><img src="https://i.imgur.com/EbHgo6e.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p><code class="language-plaintext highlighter-rouge">2 wrapper elements above our button, with vertical spacing between (to be consistent with the bottom margin of our button)</code></p>
+
+<hr />
+
+<p>It seems our consumers can use our reusable button in all 3 scenarios.</p>
+<ul>
+  <li>We deliver the component library.</li>
+  <li>The consumers copy-paste the button in their 1 product.</li>
+  <li>Our component, <strong><em>great success!</em></strong> Pop the champagne!</li>
+</ul>
+
+<p>No probs with the hard-coding the margin or padding.</p>
+
+<p>In fact… the UI team praises how easy it was to use &amp; how much time it saved them. Salary raises for all!</p>
+
+<p>Fast forward a year. Now the company wants to ship a new product. Its competing against a potential competitor product, so time-to-market for this new product is <em>critical</em>. The UI &amp; our (dev) teams choose our fancy reusable library (with our button) to speed things up. We just had a pleasant experience with it, why not?.</p>
+
+<p>Once again, the UI team sends us wireframes, &amp; we cross-verify them to ensure our reusable button is still re-usable.
+Analysis finds that our reusable button now needs to work with 1 <strong>additional</strong> product, containing 3 <strong>NEW</strong> scenarios:</p>
+
+<hr />
+<p><a href="https://i.imgur.com/Hofcc2s.png"><img src="https://i.imgur.com/Hofcc2s.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p><code class="language-plaintext highlighter-rouge">Button is used inside an element with padding. Due to both the buttons bottom margin &amp; wrapper bottom padding, we have this weird extra gap between the button &amp; the bottom of the wrapper.</code></p>
+
+<hr />
+<p><a href="https://i.imgur.com/I72leYH.png"><img src="https://i.imgur.com/I72leYH.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p><code class="language-plaintext highlighter-rouge">Our "reusable" button is re-used twice &amp; placed side-by-side. There is 2x the expected space between them.</code></p>
+
+<hr />
+<p><a href="https://i.imgur.com/3BvZ67U.png"><img src="https://i.imgur.com/3BvZ67U.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p><code class="language-plaintext highlighter-rouge">The consumer wants to have a slightly thinner button (a real-world example of this is using a re-usable button with different inner text). Since the padding &amp; margin is hard-coded, we see our button with larger-than-life spacing. "Way too much whitespace" the UI team says.</code></p>
+
+<hr />
+
+<p>Ah crap. Our button can’t be re-used in these 3 new scenarios!</p>
+
+<p>Eventually, the UI team gives feedback about not being able to use our so-called “reusable” component in the new concepts properly. Something about “ugly &amp; inconsistent spacing”.</p>
+
+<p>As we can see above, the button can be reused fine in the 3 original situations, but the extra 3 situations are a pain in the ass. Due to us hard-coding external &amp; internal spacing (in an attempt to improve the reusability of the button), our consumers are forced to apply hacky workarounds that severely deplete the <a href="https://www.oreilly.com/library/view/the-pragmatic-programmer/9780135956977/f_0020.xhtml">technical debt capacity</a> of the entire company. Even projects not using this library may still be negatively impacted, especially if they need the staff resources which are now blocked on <strong>our</strong> current button issue.</p>
+
+<blockquote>
+  <p>When a reusable library cannot be reasonably reused, its possible that using it poses more downside than upside, thus making it <strong>not</strong> reusable.</p>
+</blockquote>
+
+<p>If our consumers cant use our reusable button in a pleasing way, will they:</p>
+<ul>
+  <li>Continue using the library going forward into future products?</li>
+  <li>Is it adding tech debt each time they use it? Are there complaints in the UI team that isn’t being sent to us? (the dev team)</li>
+  <li>Will the risk of company turnover in the UI department now increase due to our flaw?</li>
+  <li>If someone chooses to use our library in their product, does it increase their schedule risk?</li>
+  <li>Is our library actually a blocker? Perhaps this flaw is just getting started…</li>
+  <li>If a consumer uses our library, is the cost worse than the potential benefit?</li>
+  <li>And many other questions, including questioning the technical intelligence of our team.</li>
+</ul>
+
+<p>As you can see, this is a <strong>very critical</strong> design flaw. Imagine a structural engineer designing a skyscraper, but it has a design flaw, such as <a href="https://news.stanford.edu/pr/01/wtcpostmortem125.html">misjudging the structural integrity of the base</a>, exposing it to potential collapse &amp; making it inhabitable. In this case, the consumers (inhabitants) won’t be able to inhabit the building…</p>
+
+<h1 id="illusions">Illusions</h1>
+<p>Depending on the type of mission-critical software you develop, the structural analogy above may be understating or overexaggerated. However the analogy still stands - our library design flaw definitely has a serious flaw.</p>
+
+<p>We tried our best &amp; attempted to maximize reusability by allowing consumers to copy-paste our component and have it work “out of the box”. Just like a plug-n-play Xbox controller with a PC.</p>
+
+<p>We maximized reusability initially, but it was all an illusion. Our approach started backfiring when the 2nd product had to be supported. The problem, you see, is that <strong>our approach to reusability design isn’t scalable</strong>. And because of this unforeseen matter, we now need to re-write our component, re-deploy, re-test both products etc.</p>
+
+<p>It gets even worse. In reality, reusable components are used in more than <code class="language-plaintext highlighter-rouge">2</code> products (<code class="language-plaintext highlighter-rouge">6</code> scenarios). Developing successful reusable libraries is hard work, a tricky mistress. And we just created a prison without knowing it, &amp; our team is now trapped inside, chewing on stale moldy bread &amp; banging empty metal mugs against prison railings.</p>
+
+<h1 id="prison-break">Prison break</h1>
+<p>If you recall, the 2 <em>challenges</em> our team had to overcome were:</p>
+<ol>
+  <li>Support all necessary <strong>scenarios</strong> (current known future ones, as well as future unknown scenarios)</li>
+  <li>Support consumers so that they can work at their best <strong>potential</strong> (i.e.: flexibility + productivity + creativity)</li>
+</ol>
+
+<p>And we tried to overcome both challenges by hard-coding spacing.
+But due to our flawed approach to reusability design, we failed to overcome both challenges.
+It is, however, indeed possible to overcome both challenges <strong>SCALABLY</strong>.</p>
+
+<h1 id="brilliance-encased-in-simplicity">Brilliance encased in simplicity</h1>
+<p>Think of <a href="https://getbootstrap.com">Bootstrap</a>. It is the epitome of reusable component web libraries (excluding native platform SDK’s).
+The <a href="https://getbootstrap.com/2.3.2/components.html">components</a> the library provides are super-simple. In fact, the components are so simple, it sometimes gets questionnable.</p>
+
+<p>They’re so…. simple, right? They’re just basic wrappers around HTML elements with a tiny CSS class slapped on to provide a default styling “out of the box”. Stupid? No, not stupid. In fact, the simplicity is ABSOLUTELY <strong>brilliant</strong>.</p>
+
+<blockquote>
+  <p>Challenge #1: “Support all necessary scenarios (current known future ones, as well as future unknown scenarios)”</p>
+</blockquote>
+
+<p>By having stupidly simple components, Bootstrap components are so flexible that they can be used in the significant majority of scenarios.</p>
+
+<blockquote>
+  <p>Challenge #2: “Support consumers so that they can work at their best potential (i.e.: flexibility + productivity + creativity)”</p>
+</blockquote>
+
+<p>And since the html structure &amp; styling is simple, consumers can apply their own styling to achieve their needs quickly. Need a different colour? A different font style? Different spacing? Different border? Different box sizing model? Bam, easy peasy.</p>
+
+<p>Judging by the significant commercial adoption of Bootstrap, i’d say the Facebook devs used the <strong>CORRECT</strong> approach in designing reusable libraries, a <em>truly</em> scalable approach!</p>
+
+<h1 id="i-didnt-hear-no-bell">I didn’t hear no bell</h1>
+<p>Us &amp; our team have been forced into a difficult situation - we now NEED to rewrite our reusable UI button to unblock our UI team, so that our company can beat the competitor to the market:</p>
+<ul>
+  <li>With this new <strong><em>scalable</em></strong> reusability design approach in mind, lets approach the button design differently.</li>
+  <li>Instead, we will make our button simpler, &amp; defer extra options to consumers.</li>
+</ul>
+
+<p>With this approach, we are hoping to overcome the 2 challenges in an inexpensive manner.</p>
+
+<p>Again, lets revisit the 3 scenarios our button received complaints about:</p>
+
+<hr />
+<p><a href="https://i.imgur.com/Hofcc2s.png"><img src="https://i.imgur.com/Hofcc2s.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p>Unscalable approach: <code class="language-plaintext highlighter-rouge">Button is used inside an element with padding. Due to both the buttons bottom margin &amp; wrapper bottom padding, we have this weird extra gap between the button &amp; the bottom of the wrapper.</code></p>
+
+<p>Scalable approach: our button <strong>no longer</strong> has extra bottom padding. The consumer has to write some extra lines of CSS, but they can use the button the exact way they want. They can now ACTUALLY USE our button!</p>
+
+<hr />
+<p><a href="https://i.imgur.com/I72leYH.png"><img src="https://i.imgur.com/I72leYH.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p>Unscalable approach: <code class="language-plaintext highlighter-rouge">Our "reusable" button is re-used twice &amp; placed side-by-side. There is 2x the expected space between them.</code></p>
+
+<p>Scalable approach: our button <strong>no longer</strong> specifies margin. The buttons neatly sit side-by-side &amp; the UI team is relieved</p>
+
+<hr />
+<p><a href="https://i.imgur.com/3BvZ67U.png"><img src="https://i.imgur.com/3BvZ67U.png" alt="Scenario" title="Scenario" /></a></p>
+
+<p>Unscalable approach: <code class="language-plaintext highlighter-rouge">The consumer wants to have a slightly thinner button (a real-world example of this is using a re-usable button with different inner text). Since the padding &amp; margin is hard-coded, we see our button with larger-than-life spacing. "Way too much whitespace" the UI team says.</code></p>
+
+<p>Scalable approach: our button <strong>no longer</strong> specifies padding or margin. The consumer is able to decrease the button width, &amp; is able to define the button’s padding &amp; margin in several ways to achieve their exact vision (e.g.: percentage of REM based on the button’s wrapper width)</p>
+
+<hr />
+
+<p>Pats on the back for everyone. The consumers need to write <strong>a bit of extra code</strong>, but that overhead is so tiny considering the significant productivity advantage our “new” button provides. Now <em>THATS</em> a smart tradeoff. What a cracker!</p>
+
+<p>We were able to apply our new scalable approach to reusability &amp; overcome both challenges. Thank god!</p>
+
+<h1 id="whew-that-was-a-close-one">“Whew, that was a close one!”</h1>
+<p>If consumers start facing serious business or technical issues, the library obviously has a critical design flaw. It needs to be addressed at some point, before it spirals out of control. If you caught onto the design issue early, good on you. And if you have the time to fix it today, then even better.</p>
+
+<p>But ignoring the importance of design flaws like this can lead to…</p>
+
+<h1 id="absolute-disaster">Absolute disaster!</h1>
+<p>So what happens if critical design flaws are misunderstood &amp; treated as “not important”?</p>
+<h3 id="1-staff-cant-do-their-job-to-the-best-of-their-ability">1. Staff cant do their job to the best of their ability</h3>
+<p>Developers just end up creating their own reusable library, usually as a Skunkworks project, &amp; start migrating over to it. Often, they are just frustrated by the business expense &amp; take things into their own hands. Good developers dont put up with crap software, &amp; will take initiative &amp; do this.</p>
+
+<p>It can turn out surprisingly well (ignoring the business expense, stress from late nights &amp; potential turnover). Then the old reusable library just gets left in the dust because it becomes an unattractive alternative during project planning.</p>
+
+<p>Example: if a front-end “shared” component library requires designers to <strong>change</strong> their workflow, the time “saved” by developers using the reusable library <strong>is actually just shifted</strong> onto the designers. In this case, the reusable library does NOT actually save effort (because it just shifts extra work to someone else). From the library developers perspective, it saves time. From everyone elses perspective, its an <strong><em>absolute catastrophe</em></strong>! The responsibility unfortunately lies on the engineers in this case, which intentionally put those design flaws in place &amp; let it be.</p>
+
+<h3 id="2-the-technical-debt-eventually-become-too-visible--starts-hindering-development-agility-to-the-point-where-all-current-projects-get-dropped">2. The technical debt eventually become too visible, &amp; starts hindering development agility to the point where all current projects get dropped</h3>
+<p>Put simply, the reusable library gets thrown out &amp; redone:</p>
+<ul>
+  <li>Re-architect</li>
+  <li>Re-design</li>
+  <li>Re-write</li>
+  <li>Re-integrate</li>
+  <li>Re-test</li>
+  <li>Re-deploy</li>
+</ul>
+
+<p>Plus all those:</p>
+<ul>
+  <li>meetings</li>
+  <li>turnover</li>
+  <li>ad-hoc dev chats</li>
+  <li>the inevitable political pressure from upper management.</li>
+</ul>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<blockquote>
+  <p>“There’s only a few problems so far, so lets keep going in this direction!”</p>
+</blockquote>
+
+<p>If you ever hear this, keep in mind that its important to think long &amp; hard on design decisions that can be potentially expensive in the future.</p>
+
+<p>An approach of <em>intentionally</em> pushing design flaws to the side because “it makes my life easier” isn’t an acceptable approach. Companies rely on developers to be responsible &amp; to act in the best interest of the company…</p>
+<ul>
+  <li>Software is <strong>hard</strong>.</li>
+  <li>Engineers make mistakes <strong>all</strong> the time.</li>
+  <li>That is fine, it happens. I make mistakes too.</li>
+</ul>
+
+<p>But <strong><em>intentionally</em></strong> making mistakes isn’t a responsible approach to development, ESPECIALLY if it comes at the expense of other teams, your company, &amp; all your other colleagues that rely &amp; put faith in you.</p>
+
+  </div><a class="u-url" href="/blog/2021/03/05/the-illusion-of-reusability-be-a-harsh-mistress.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/blog/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

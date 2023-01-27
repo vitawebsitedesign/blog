@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Blindly applying defensive programming is a recipe for disaster | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Blindly applying defensive programming is a recipe for disaster" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Depending on the system requirements, fault tolerance may be a priority for your product. This is especially true in mission-critical systems that need to consider high availability, data integrity, security &amp; physical safety." />
+<meta property="og:description" content="Depending on the system requirements, fault tolerance may be a priority for your product. This is especially true in mission-critical systems that need to consider high availability, data integrity, security &amp; physical safety." />
+<link rel="canonical" href="vitawebsitedesign.github.io/blog/2021/02/20/blindly-applying-defensive-programming-is-a-recipe-for-disaster.html" />
+<meta property="og:url" content="vitawebsitedesign.github.io/blog/2021/02/20/blindly-applying-defensive-programming-is-a-recipe-for-disaster.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-02-20T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Blindly applying defensive programming is a recipe for disaster" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2021-02-20T00:00:00+00:00","datePublished":"2021-02-20T00:00:00+00:00","description":"Depending on the system requirements, fault tolerance may be a priority for your product. This is especially true in mission-critical systems that need to consider high availability, data integrity, security &amp; physical safety.","headline":"Blindly applying defensive programming is a recipe for disaster","mainEntityOfPage":{"@type":"WebPage","@id":"vitawebsitedesign.github.io/blog/2021/02/20/blindly-applying-defensive-programming-is-a-recipe-for-disaster.html"},"url":"vitawebsitedesign.github.io/blog/2021/02/20/blindly-applying-defensive-programming-is-a-recipe-for-disaster.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/blog/assets/main.css">
+  <link rel="stylesheet" href="/blog/assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="vitawebsitedesign.github.io/blog/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/blog/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#ah-yes-thems-big-words">Ah, yes, thems big words…</a></li>
+<li class="toc-entry toc-h1"><a href="#adventure-time">Adventure time</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#defensive-programming-is-mostly-about-complex-holistic-self-reflection">Defensive programming is mostly about complex, holistic self-reflection</a></li>
+<li class="toc-entry toc-h2"><a href="#ah-mate-this-is-easy">Ah mate, this is easy!</a></li>
+<li class="toc-entry toc-h2"><a href="#right-lets-just-show-something-in-the-ui-then">Right, lets just show something in the UI then?</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#neato-im-now-gonna-start-being-defensive-the-words-defensive-programming-have-a-nice-ring-to-it">Neato! I’m now gonna start being defensive. The words “Defensive programming” have a nice ring to it!</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Blindly applying defensive programming is a recipe for disaster</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2021-02-20T00:00:00+00:00" itemprop="datePublished">
+        Feb 20, 2021
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Depending on the system requirements, fault tolerance may be a priority for your product. This is especially true in mission-critical systems that need to consider high availability, data integrity, security &amp; physical safety.</p>
+
+<p>For instance, what happens when the <a href="https://en.wikipedia.org/wiki/Cowboy_coding">“cowboy approach”</a> is applied when developing a physical medical device without considering safety of humans (e.g.: patient, nurse, doctor). What about an <strong>offensive</strong> programming approach instead?</p>
+
+<p>Of course, on the flip side, an overly <strong>defensive</strong> approach that’s not necessary may introduce unnecessary excessive schedule risk &amp; be a terrible choice.</p>
+
+<p>This brings us to the approach: being careful
+The official term for this is: <strong>defensive programming</strong>.</p>
+
+<h1 id="ah-yes-thems-big-words">Ah, yes, thems big words…</h1>
+<p>Basically, you just assume that all data is suss, &amp; all the bad possibilities (such as module &amp; subsystem crashes) can happen at any moment.</p>
+
+<p>You, as a developer, assume that, and only THEN do you start touching code. “Defensive programming” is really just that, we don’t <em>need</em> to overcomplicate theories here. This blog is about pragmatism. Useless talk just to sound smart has no place here.</p>
+
+<p>To help us understand how to be <strong>defensive</strong> &amp; identify the consequences, let’s put on our imagination hat &amp; assume we are developers on an autonomous trading system (mission critical). For simplicity, we’ll just pretend to freeze time, &amp; put a magnifying glass over just 1 layer in just 1 subsystem.</p>
+
+<p>Let’s say… a client-side user interface layer doing a simple HTTP AJAX call to 1 API endpoint, &amp; the UI is used by an operator (sentinel role).</p>
+
+<h1 id="adventure-time">Adventure time</h1>
+<p>When you think about it, a <em>lot</em> of suss things can happen between a client &amp; server. That sexy boundary called the internet is a dangerous void. For instance:</p>
+
+<ul>
+  <li>Xhr error (client side)</li>
+  <li>Client and/or server Timeout</li>
+  <li>All possible HTTP codes (including redirects)</li>
+  <li>Auth issues</li>
+  <li>Client-side middleware (e.g.: <a href="https://redux-observable.js.org/docs/basics/Epics.html">Redux epics</a> failing)</li>
+  <li>Dependency failures (client side)</li>
+  <li>Client and/or server caching issues</li>
+  <li>And of course, bugs!</li>
+</ul>
+
+<p>But let’s slow down a bit, keep it simple, &amp; just assume 1 of the factors listed above.
+Lets be <strong>defensive</strong> by assuming that the API is contactable &amp; it may return <strong>500</strong>, even if the API documentation doesn’t include a 500.</p>
+
+<p>If our user interface did a simple AJAX call to 1 API in JavaScript via jQuery, it may look something like:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="nx">someUrl</span><span class="p">,</span> <span class="nx">someData</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="err">…</span><span class="p">.</span> <span class="p">});</span>
+</code></pre></div></div>
+
+<p>If the API goes down, the promise will call <code class="language-plaintext highlighter-rouge">reject</code> internally. And gosh, we’re such brave programmers. Running naked here - no catch!</p>
+
+<p>So we’re being defensive, great. The next step in the defensive programming approach, is to check the situation we’re knee-deep in. Just lean back in your chair, let out a sighful breath, and reflect. Our <strong>CURRENT</strong> situation is a client-side program, being used be an <strong>operator</strong>, that is contacting an API. As a <strong>defensive programmer</strong>, we should to notify the operator that the API is actually down, <em>right</em>?</p>
+
+<p>You don’t want to leave the operator guessing or waiting, otherwise the trading algorithms could go unmonitored. And that presents significant financial risk to your firm. Software is hard, &amp; risks will always be present &amp; devs will always make mistakes. But dont intentionally make a mistake that can be cheaply avoided. That is a serious no-no.</p>
+
+<h2 id="defensive-programming-is-mostly-about-complex-holistic-self-reflection">Defensive programming is mostly about complex, holistic self-reflection</h2>
+<p>Again, lets assess our situation. A financial mission-critical system with a human operator acting as a sentinel over trading algorithms. Now lets assume <strong>all</strong> data is suss, &amp; <strong>everything</strong> possibly bad can happen.</p>
+
+<blockquote>
+  <p>A productive way to defensively program is to think of the worst possible scenarios, then work backward to the “safer” scenarios. The worst scenarios have <a href="https://en.wikipedia.org/wiki/Failure_mode_and_effects_analysis">low detectability, a high occurrence, &amp; a high severity with significant consequences</a>.</p>
+</blockquote>
+
+<p>For instance, if a major market crash occurred (Japan, GFC, covid, commodities etc) &amp; all of a sudden, our 1 API may experience a higher load. If there’s not enough company short-term funds (i.e.: pre-approved short-term liquidity) to elastically scale the backend to the very expensive levels necessary, the backend may get overloaded from all the data mining caused by the new information influx being posted on the internet (due to the financial crisis).</p>
+
+<p>So in this case, the operator ABSOLUTELY NEEDS to know that somethings wrong, so <strong>they</strong> can then take appropriate action &amp; keep the firm’s financial risk at bay during such an event.</p>
+
+<h2 id="ah-mate-this-is-easy">Ah mate, this is easy!</h2>
+<p>So as a defensive programmer, you’d simply catch the HTTP call… right?</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="nx">someUrl</span><span class="p">,</span> <span class="nx">someData</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="err">…</span><span class="p">.</span> <span class="p">})</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Nope, because whilst certain applications can show console-level errors, its usually hidden behind a menu. Our operator (who isn’t a dev) probably wouldn’t keep that pane open 24/7. Even if they did see the console message, they may not be technically capable to decrypting what the hell the message meant.</p>
+
+<p>We thought we applied “defensive programming”. We thought we were smart! Oh how wrong we were, such foolishness. The humility is unbearable! Our thinking part is correct, but we just need to add a bit more sauce to <strong>effectively</strong> make use of defensive programming.</p>
+
+<h2 id="right-lets-just-show-something-in-the-ui-then">Right, lets just show something in the UI then?</h2>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="nx">someUrl</span><span class="p">,</span> <span class="nx">someData</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="err">…</span><span class="p">.</span> <span class="p">})</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="err">…</span><span class="p">);</span>
+    <span class="nx">toast</span><span class="p">.</span><span class="nx">show</span><span class="p">(</span><span class="err">…</span><span class="p">);</span>
+  <span class="p">});</span>
+</code></pre></div></div>
+
+<p>Nope, we’re still screwed here unfortunately. If the console error logging mechanism fails (e.g.: a weakly-typed referenced variable is passed in, but was then renamed), the toast doesn’t show. Keep in mind, this is a mission critical system where everything can turn to crap in a single millisecond.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="nx">someUrl</span><span class="p">,</span> <span class="nx">someData</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="err">…</span><span class="p">.</span> <span class="p">})</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="nx">toast</span><span class="p">.</span><span class="nx">show</span><span class="p">(</span><span class="err">…</span><span class="p">);</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="err">…</span><span class="p">);</span>
+  <span class="p">});</span>
+</code></pre></div></div>
+
+<p>There we go bois. Good defensive programming, rightttttttttt?</p>
+
+<blockquote>
+  <p>Any failures in <code class="language-plaintext highlighter-rouge">toast.show</code> need to take a defensive programming approach. If it doesn’t &amp; the code is outside out of your control (e.g.: a third-party toast library), your mission-critical application should NOT use it. You absolutely need to find a <strong>safe alternative</strong>, or build one in-house. Otherwise you could be posing significant legal risk for your firm.</p>
+</blockquote>
+
+<p>All things considered, this level of defensive programming is sufficient (for our very simple scenario of 1 HTTP Ajax call).</p>
+
+<h1 id="neato-im-now-gonna-start-being-defensive-the-words-defensive-programming-have-a-nice-ring-to-it">Neato! I’m now gonna start being defensive. The words “Defensive programming” have a nice ring to it!</h1>
+<p>All things in software are contextual. If someone just says “lets do defensive programming” without actually describing a scenario, they probably need to have a closer look at the exact situation.</p>
+
+<p>You can’t be defensive in all situations. It can be counterproductive when you’re NOT developing mission-critical applications. For instance, if you’re developing an internal-use-only library, the optimal approach may be <strong>OFFENSIVE</strong> programming, &amp; defer additional handling to the consumers of your library. In this case, <strong>DEFENSIVE</strong> programming may actually <em>increase</em> schedule risk with negligible benefit (although at least you could say “I’m a defensive programmer, yay!”). Talk about tradeoffs, huh.</p>
+
+<p>Analyse the specific situation at hand, use common sense, &amp; take the right approach. Don’t just barge through the door like coolaid man &amp; exclaim “we should be defensive in everything we do”. Software engineering is complex &amp; theoretical, so make sure your choice of approach makes sense before committing on it.</p>
+
+  </div><a class="u-url" href="/blog/2021/02/20/blindly-applying-defensive-programming-is-a-recipe-for-disaster.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/blog/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

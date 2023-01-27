@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Calculating Big O time complexity for SQL Server execution plans | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Calculating Big O time complexity for SQL Server execution plans" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="We can specify how an algorithm scales with data size, by expressing its’ scalability as a mathematical formula. This is called “Big O notation”." />
+<meta property="og:description" content="We can specify how an algorithm scales with data size, by expressing its’ scalability as a mathematical formula. This is called “Big O notation”." />
+<link rel="canonical" href="vitawebsitedesign.github.io/blog/2019/10/09/calculating-big-o-time-complexity-for-sql-server-execution-plans.html" />
+<meta property="og:url" content="vitawebsitedesign.github.io/blog/2019/10/09/calculating-big-o-time-complexity-for-sql-server-execution-plans.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-10-09T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Calculating Big O time complexity for SQL Server execution plans" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-10-09T00:00:00+00:00","datePublished":"2019-10-09T00:00:00+00:00","description":"We can specify how an algorithm scales with data size, by expressing its’ scalability as a mathematical formula. This is called “Big O notation”.","headline":"Calculating Big O time complexity for SQL Server execution plans","mainEntityOfPage":{"@type":"WebPage","@id":"vitawebsitedesign.github.io/blog/2019/10/09/calculating-big-o-time-complexity-for-sql-server-execution-plans.html"},"url":"vitawebsitedesign.github.io/blog/2019/10/09/calculating-big-o-time-complexity-for-sql-server-execution-plans.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/blog/assets/main.css">
+  <link rel="stylesheet" href="/blog/assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="vitawebsitedesign.github.io/blog/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/blog/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#o1">O(1)</a></li>
+<li class="toc-entry toc-h2"><a href="#on">O(n)</a></li>
+<li class="toc-entry toc-h2"><a href="#o2n">O(2n)</a></li>
+<li class="toc-entry toc-h2"><a href="#on2">O(n2)</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#bonus-example">Bonus example</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#olog-n">O(log n)</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#let-the-calculations-begin">Let the calculations begin!</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#on-log-n">O(n log n)</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#calculating-big-o-for-this-algorithm">Calculating Big O for this algorithm</a></li>
+<li class="toc-entry toc-h3"><a href="#theoretical-asymptotic-limits">Theoretical asymptotic limits</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#the-dangers-of-ignoring-scalability">The dangers of ignoring scalability</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#data-growth--low-detectability--danger">Data growth + low detectability = danger</a></li>
+<li class="toc-entry toc-h3"><a href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Calculating Big O time complexity for SQL Server execution plans</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-10-09T00:00:00+00:00" itemprop="datePublished">
+        Oct 9, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>We can specify how an algorithm scales with data size, by expressing its’ scalability as a mathematical formula. This is called “Big O notation”.</p>
+
+<p>As far as measuring scalability goes, the 3 common weapons of choice are:</p>
+<ul>
+  <li>Big Omega: a formula that defines best-case algorithm scalability</li>
+  <li>Big O: a formula that defines worst-case algorithm scalability</li>
+  <li>Big Theta: a formula that defines both worst-case &amp; best-case algorithm scalability</li>
+</ul>
+
+<p>Additionally, Big O is usually divided into 2 metrics:</p>
+<ul>
+  <li>Time complexity: the worst-case time required for the algorithm to complete</li>
+  <li>Space complexity: the worst-case space required for the algorithm to complete. This covers either persistent memory such as disk, or volatile memory such as RAM.</li>
+</ul>
+
+<p>This post will run through Big O time complexity by analysing SQL Server execution plans. I’m starting with a fresh db, so if you feel like a fat slob and have cheeseball stains on your shirt, get some exercise by typing in the sql examples.</p>
+
+<p>Speaking of typing things, heres the first example now!:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">big_o</span><span class="p">;</span>
+<span class="k">GO</span>
+<span class="n">USE</span> <span class="n">big_o</span><span class="p">;</span>
+<span class="k">GO</span>
+</code></pre></div></div>
+
+<h2 id="o1">O(1)</h2>
+<p>In the context of database <em>queries</em>, O(1) means that 1 read is executed, regardless of the number of rows in a table. E.g.: seeking 1 row by using a predicate against an indexed column:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span> <span class="p">(</span>
+	<span class="n">id</span> <span class="nb">INT</span> <span class="k">IDENTITY</span> <span class="k">PRIMARY</span> <span class="k">KEY</span>
+	<span class="p">,</span><span class="n">val</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span>
+<span class="p">);</span>
+<span class="k">GO</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="k">GO</span> <span class="mi">100</span>
+
+<span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span> <span class="n">val</span>
+<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span>
+<span class="k">WHERE</span> <span class="n">id</span> <span class="o">=</span> <span class="mi">10</span>
+</code></pre></div></div>
+
+<p>The sql above creates a 100-row table, then runs a query with a predicate that is usable against the implicit clustered index.</p>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(1).jpg" alt="O1" title="O1" /></p>
+
+<p>And we can verify the number of reads! The execution plan for this query identifies only 1 “<em>Number of Rows Read</em>”, even though this table has 100 rows.</p>
+
+<p>Since the database engine only reads 1 row (regardless of the number of rows in the table), we can say that the worst-case performance for this query is O(1).</p>
+
+<p>But what would happen if a table scan was done instead? SQL Server would have to read all rows in our table using an Index Scan operation (100 reads). And if the table had 200 rows, 200 reads would occur. If 400 rows, 400 reads would occur and so forth.</p>
+
+<p>You know what? We can also express this kind of “scalability” as a math formula as well.</p>
+
+<h2 id="on">O(n)</h2>
+<p>A (non-seeked) table scan means that database engine goes to the first leaf node in the clustered binary tree index, then reads all the rows by advancing through all leaf nodes via the “next” pointer (which exists in each leaf node). This semantic is similar to reading a linked list from head to tail.</p>
+
+<p>To execute a table scan on our table, we can do:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span> <span class="n">val</span>
+<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span>
+</code></pre></div></div>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n).jpg" alt="O n" title="O n" /></p>
+
+<p>This scan required reading all 100 rows. And you know what? If there was 1000 rows in the table, the scan would involve 1000 reads.</p>
+
+<p>Since the number of reads is always equal to the number of rows in the table, we could say that <code class="language-plaintext highlighter-rouge"># of reads = # of table rows</code>.</p>
+
+<p>In other words: O(n)</p>
+
+<h2 id="o2n">O(2n)</h2>
+<p>If <code class="language-plaintext highlighter-rouge">n</code> is the number of rows, then <code class="language-plaintext highlighter-rouge">2n</code> means that the number of reads required is twice the number of rows. This means a query on our 100-row table would have to involve 200 reads.</p>
+
+<p>A common example of this is a self <code class="language-plaintext highlighter-rouge">JOIN</code>, which is when you do a normal query, but then join to the same source table again. An easy way to visualize this operation is to just imagine 2 copies of 1 table, then visualizing a normal <code class="language-plaintext highlighter-rouge">INNER JOIN</code> between them:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="p">,</span> <span class="n">b</span><span class="p">.</span><span class="n">id</span>
+<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span> <span class="n">a</span> <span class="k">JOIN</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span> <span class="n">b</span> <span class="k">ON</span> <span class="n">a</span><span class="p">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">b</span><span class="p">.</span><span class="n">id</span>
+</code></pre></div></div>
+
+<p>Here, we scan all of our 100 rows, then <code class="language-plaintext highlighter-rouge">JOIN</code> each row to itself.</p>
+
+<ul>
+  <li>So the number of reads is 100 + 100</li>
+  <li>… or 2 * 100</li>
+  <li>… or 2 * (number of rows in our table)</li>
+  <li>… or 2n</li>
+</ul>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(2n).jpg" alt="O 2n" title="O 2n" /></p>
+
+<p>And as we can see, the execution plan verifies our idea. Both scan operations did 100 reads, therefore giving us 200 reads total, which is <em>double</em> the number of rows in our table.</p>
+
+<h2 id="on2">O(n<sup>2</sup>)</h2>
+<p>If n is 100 rows, then n<sup>2</sup> would be 10000 reads. The <code class="language-plaintext highlighter-rouge">CROSS JOIN</code> logical operation takes the cartesian product of 2 tables, giving us a mooshy, tasty, salty goo.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="mi">1</span>
+<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span> <span class="n">a</span> <span class="k">CROSS</span> <span class="k">JOIN</span> <span class="n">dbo</span><span class="p">.</span><span class="n">items</span> <span class="n">b</span>
+</code></pre></div></div>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n%5E2).jpg" alt="O n2" title="O n2" /></p>
+
+<p>As we can see above, our database engine now scans our table twice, each one raking in 100 rows. Then they’re joined using a <strong>nested loop</strong>, giving us a total of 10,000 rows.</p>
+
+<p>Now you may say, “wait a second, but thats 200 reads!”. Well, you are technically correct. But now we are dealing with <code class="language-plaintext highlighter-rouge">JOIN</code>, which is an expensive operation relative to index scans.</p>
+
+<blockquote>
+  <p>When calculating Big O, you only care about the “meat” of the algorithm - the stuff that actually gobbles up alot of CPU/memory/time. Thus we discard RELATIVELY cheap operations</p>
+</blockquote>
+
+<p>Comparing Index Scans to nested loop executions is like comparing oranges to apples. The amount of joining we have to do in-memory should be the main focus when calculating big O (rather than focusing on the scan read operations that pull disk pages into memory).</p>
+
+<p>Hence, we will ignore the 200 reads (which are ignorable from a scalability calculation standpoint), and only care about the real “meat” - the number of inner loop executions that produced the cartesian product:</p>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n%5E2).jpg" alt="O n2" title="O n2" /></p>
+
+<p>Furthermore, looking at the execution plan again, we wanna focus on “<em>Actual Number of Rows</em>” &amp; “<em>Number of executions</em>”. The execution plan identifies that our <code class="language-plaintext highlighter-rouge">INNER JOIN</code> operation executed once start-to-finish. This leaves us with the 10,000 inner loop operations to produce our cartestian product. So:</p>
+
+<ul>
+  <li>10000 inner loop operations</li>
+  <li>…or 100 * 100</li>
+  <li>…or 100<sup>2</sup></li>
+</ul>
+
+<h3 id="bonus-example">Bonus example</h3>
+<p>To help hammer in the horrifying effects of quadratic scalability, heres another O(n<sup>2</sup>) example thats a little more… “real”. This example below uses a recursive CTE to print out all the nodes in a <a href="https://en.wikipedia.org/wiki/Binary_tree#Types_of_binary_trees">Perfect Binary Tree</a>.</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="n">dbo</span><span class="p">.</span><span class="n">tree</span><span class="p">;</span>
+<span class="k">GO</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">dbo</span><span class="p">.</span><span class="n">tree</span> <span class="p">(</span>
+	<span class="n">id</span> <span class="nb">INT</span> <span class="k">IDENTITY</span> <span class="k">PRIMARY</span> <span class="k">KEY</span>
+	<span class="p">,</span><span class="n">label</span> <span class="nb">CHAR</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span>
+	<span class="p">,</span><span class="n">parent_label</span> <span class="nb">CHAR</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+	<span class="p">,</span><span class="n">is_root</span> <span class="nb">BIT</span> <span class="k">NOT</span> <span class="k">NULL</span>
+<span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">IX_tree_is_root</span> <span class="k">ON</span> <span class="n">dbo</span><span class="p">.</span><span class="n">tree</span> <span class="p">(</span><span class="n">is_root</span><span class="p">)</span>
+<span class="n">INCLUDE</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">parent_label</span><span class="p">);</span>
+<span class="k">GO</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">dbo</span><span class="p">.</span><span class="n">tree</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">parent_label</span><span class="p">,</span> <span class="n">is_root</span><span class="p">)</span> <span class="k">VALUES</span>
+	<span class="p">(</span><span class="s1">'A'</span><span class="p">,</span> <span class="k">NULL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="p">,(</span><span class="s1">'B'</span><span class="p">,</span> <span class="s1">'A'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">,(</span><span class="s1">'C'</span><span class="p">,</span> <span class="s1">'A'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">,(</span><span class="s1">'D'</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">,(</span><span class="s1">'E'</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">,(</span><span class="s1">'F'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="p">,(</span><span class="s1">'G'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="k">GO</span>
+
+<span class="k">WITH</span> <span class="n">cte_tree</span> <span class="k">AS</span> <span class="p">(</span>
+	<span class="k">SELECT</span> <span class="n">label</span><span class="p">,</span> <span class="n">parent_label</span>
+	<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="n">tree</span>
+	<span class="k">WHERE</span> <span class="n">is_root</span> <span class="o">=</span> <span class="mi">1</span>
+	<span class="k">UNION</span> <span class="k">ALL</span>
+	<span class="k">SELECT</span> <span class="n">child</span><span class="p">.</span><span class="n">label</span><span class="p">,</span> <span class="n">child</span><span class="p">.</span><span class="n">parent_label</span>
+	<span class="k">FROM</span> <span class="n">cte_tree</span> <span class="k">JOIN</span> <span class="n">dbo</span><span class="p">.</span><span class="n">tree</span> <span class="n">child</span> <span class="k">ON</span> <span class="n">cte_tree</span><span class="p">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">child</span><span class="p">.</span><span class="n">parent_label</span>
+<span class="p">)</span>
+<span class="k">SELECT</span> <span class="o">*</span>
+<span class="k">FROM</span> <span class="n">cte_tree</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Before we dive into the good stuff, here’s the result set:</p>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/recursive-tree-result.jpg" alt="O n2 result" title="O n2 result" /></p>
+
+<p>AND NOW, BEHOLD OUR ALL MIGHTY PLAN!</p>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/recursive-tree-execution-plan.jpg" alt="O n2 execution plan" title="O n2 execution plan" /></p>
+
+<p>The 2 parts to focus on are:</p>
+
+<ul>
+  <li>The <strong>Index Seek</strong>, which gets the root node of the tree. This is represented by the row we inserted with <code class="language-plaintext highlighter-rouge">is_root</code> set to <code class="language-plaintext highlighter-rouge">1</code></li>
+  <li>The <strong>Index Scan</strong>, which gets the remaining rows in the tree for our recursive CTE</li>
+</ul>
+
+<p>Lets start with the <strong>Index Seek</strong>.</p>
+
+<p>It will always be 1, assuming our table has at least 1 row. Since we are calculating Big O, we are therefore only interested in the worst case, and therefore we should assume there will be at least 1 row (would there even be a point of calculating big O that can only be reliably used for <a href="https://blog.codinghorror.com/everything-is-fast-for-small-n/">empty tables</a> anyways?).</p>
+
+<blockquote>
+  <p>When calculating Big O, we ignore numeric constants. 1 is a constant number, so we ignore the “1 read” from the Index Seek operation</p>
+</blockquote>
+
+<p>And now for the main course. The Index Scan has 49 “Number of Rows Read” &amp; 6 “Actual Number of Rows”.</p>
+
+<blockquote>
+  <p>“Number of Rows Read” is the number of rows read from your storage medium, whereas “Actual Number of Rows” is the rows output by the plan operation. These numbers can differ in queries with predicates, which you can identify underneath the “Predicate” header</p>
+</blockquote>
+
+<p>Again, since we only care about the “meat”, the “<em>Number of Rows Returned</em>” is of no interest to us, but the work REQUIRED to get those rows IS of interest to us. So this leaves us with the 49 “<em>Number of Rows Read</em>”.</p>
+
+<ul>
+  <li>49 rows read</li>
+  <li>…or 7 * 7 rows read</li>
+  <li>…or <code class="language-plaintext highlighter-rouge"># of nodes in tree</code> * <code class="language-plaintext highlighter-rouge"># of nodes in tree</code></li>
+  <li>…or <code class="language-plaintext highlighter-rouge"># of nodes in tree</code> squared</li>
+  <li>…or <code class="language-plaintext highlighter-rouge">n</code> squared</li>
+  <li>…or n<sup>2</sup></li>
+</ul>
+
+<p>Awesome work! We were able to calculate the worst-case time complexity for this algorithm, and express it as a convenient math formula - O(n<sup>2</sup>).</p>
+
+<p>Our example table only had 49 rows. Imagine running this kind of unscalable algorithm with millions of rows! O(n<sup>2</sup>) algorithms are the truly the kinds of horrors the SQL devil injects into our dreams after we skip church.</p>
+
+<p>Enough about the bad. Now to identify the kind of scalability we should be aiming for in our query tuning…</p>
+
+<h2 id="olog-n">O(log n)</h2>
+<p>Logarithmic math operations (which in the context of Big O, is to the base of 2) are equivalent to square root operations. To put it simply, database queries that halve the amount of work required after each step, exhibit logarithmic scalability characteristics.</p>
+
+<p>A common example is searching through some tree. Fortunately for us, the SQL Server optimizer is so good at it’s job that the execution plans it generates for recursive CTE’s &amp; the <a href="https://docs.microsoft.com/en-us/sql/t-sql/data-types/hierarchyid-data-type-method-reference?view=sql-server-2017">HierarchyId</a> data type often run <em>better</em> than <code class="language-plaintext highlighter-rouge">O(log n)</code>.</p>
+
+<p>So for maximum clarity, the example we will run through this time just recursively doubles a number. Essentially, we will have a recursive function that terminates when a INNER JOIN doesnt find the next value in our table.</p>
+
+<p>For example, if we have a table with rows with values <code class="language-plaintext highlighter-rouge">1</code>, <code class="language-plaintext highlighter-rouge">2</code>, <code class="language-plaintext highlighter-rouge">4</code> &amp; <code class="language-plaintext highlighter-rouge">8</code>, we start doubling from 1 &amp; keep doing until we hit 8.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">DROP</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span> <span class="p">(</span>
+	<span class="n">val</span> <span class="nb">INT</span> <span class="k">IDENTITY</span> <span class="k">PRIMARY</span> <span class="k">KEY</span>
+	<span class="p">,</span><span class="n">tag</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span>
+<span class="p">);</span>
+<span class="k">GO</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span> <span class="p">(</span><span class="n">tag</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="k">GO</span> <span class="mi">64</span>
+
+<span class="k">WITH</span> <span class="n">cte_scale</span> <span class="k">AS</span> <span class="p">(</span>
+	<span class="k">SELECT</span> <span class="n">TOP</span> <span class="mi">1</span> <span class="n">val</span>
+	<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span>
+	<span class="k">UNION</span> <span class="k">ALL</span>
+	<span class="k">SELECT</span> <span class="n">child</span><span class="p">.</span><span class="n">val</span>
+	<span class="k">FROM</span> <span class="n">cte_scale</span> <span class="k">JOIN</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span> <span class="n">child</span> <span class="k">ON</span> <span class="n">child</span><span class="p">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">cte_scale</span><span class="p">.</span><span class="n">val</span> <span class="o">*</span> <span class="mi">2</span>
+<span class="p">)</span>
+<span class="k">SELECT</span> <span class="n">val</span>
+<span class="k">FROM</span> <span class="n">cte_scale</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Here we chuck in values between 1 &amp; 64, then we sit back &amp; let the recursive CTE roll:</p>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o-logn-result.jpg" alt="O log n result" title="O log n result" /></p>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o-logn-execution-plan.jpg" alt="O log n execution plan" title="O log n execution plan" /></p>
+
+<h3 id="let-the-calculations-begin">Let the calculations begin!</h3>
+<p>Firstly, lets rule out constants again. Since we always start with 1 row read (for tables with at least 1 row), we can ignore the <code class="language-plaintext highlighter-rouge">Index Scan</code> operation that just retrieves 1 row for the anchor portion of our <code class="language-plaintext highlighter-rouge">cte_scale</code> CTE.</p>
+
+<p>Secondly, we are dealing with <code class="language-plaintext highlighter-rouge">JOIN</code>s (in our recursive CTE), so we can rule out the <code class="language-plaintext highlighter-rouge">Index Seek</code> operation (shown in the bottom-right of the pic). Its not used for a key lookup either, so its not really an expense when relatively compared to the <code class="language-plaintext highlighter-rouge">JOIN</code>.</p>
+
+<p>And now, the <code class="language-plaintext highlighter-rouge">JOIN</code> operation. With our nested loop operation outputting 6 rows, we can identify that the nested loop ran 6 times. We can cross-verify this with our output of <code class="language-plaintext highlighter-rouge">1, 2, 4, 8, 16, 32, 64</code>. Ignoring the initial step (which will always be constant, as noted before), this gives us:</p>
+
+<ul>
+  <li>6 steps for our 64 row table</li>
+  <li>…or log<sub>2</sub>(64)</li>
+  <li>…or log<sub>2</sub>(rows in table)</li>
+  <li>…or log<sub>2</sub>(n)</li>
+</ul>
+
+<p>Oh yes, this is what dreams are made of. This is what true happiness feels like. I have tears of joy right now as we speak.</p>
+
+<p>And this is the “end game” for your tuning - taking factorial/exponential/quadratic algorithms, and making them either <code class="language-plaintext highlighter-rouge">O(1)</code>, <code class="language-plaintext highlighter-rouge">O(n)</code> or <code class="language-plaintext highlighter-rouge">O(log n)</code>.</p>
+
+<p>So far we have covered:</p>
+<ul>
+  <li>O(1), what dreams are made of</li>
+  <li>O(log n), the king we love most</li>
+  <li>O(n), not bad, but must be tolerated in most cases when you need alot of unpaginated data</li>
+  <li>O(2n), an unscalable algorithm that makes you gag, but not puke your guts out</li>
+  <li>O(n<sup>2</sup>), which is the most evil of all. To me, O(n<sup>2</sup>) is just as bad as exponential or factorial scalabilities, because these kinds of algorithms all just get terminated halfway through anyways, either by the user exiting, or by the server in order to open resources for other connections.</li>
+</ul>
+
+<p>There is 1 more “common” Big O complexity that fits somewhere between <code class="language-plaintext highlighter-rouge">O(2n)</code> and O(n<sup>2</sup>).</p>
+
+<p>Its possible to get away with this kind of scalability, but sooner or later, they strike production from the shadows, and you’ll regret the day you slouched in your chair, lit a cigar &amp; proclaimed yourself as the king of database tuning.</p>
+
+<h2 id="on-log-n">O(n log n)</h2>
+<p>This is like <code class="language-plaintext highlighter-rouge">O(log n)</code>, but you run the algorithm <code class="language-plaintext highlighter-rouge">n</code> times instead of just once.</p>
+
+<p>Below is an example that extends our “keep squaring a number” example from before. But instead of running the recursive CTE for 1 anchor row, we run the whole algorithm for each table row.</p>
+
+<p>To simplify this example to work with our previous example table (which was a small 64-row table), i’m:</p>
+
+<ul>
+  <li>Limiting the run to <strong>8</strong> executions (i.e.: the 1st 8 rows) via a <code class="language-plaintext highlighter-rouge">TOP 8</code></li>
+  <li>Limiting each execution to only recurse <strong>3 times</strong></li>
+</ul>
+
+<p>This means the <code class="language-plaintext highlighter-rouge">O(log n)</code> algorithm will run 8 times, with each execution doing 3 recursion steps. So we end up with <code class="language-plaintext highlighter-rouge">8 * 3 = 24</code> executions:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">TRUNCATE</span> <span class="k">TABLE</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span><span class="p">;</span>
+<span class="k">GO</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span> <span class="p">(</span><span class="n">tag</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="k">GO</span> <span class="mi">64</span>
+
+<span class="k">WITH</span> <span class="n">cte_scale</span> <span class="k">AS</span> <span class="p">(</span>
+	<span class="k">SELECT</span> <span class="n">TOP</span> <span class="mi">8</span> <span class="n">val</span><span class="p">,</span> <span class="n">val</span> <span class="k">AS</span> <span class="s1">'initial'</span><span class="p">,</span> <span class="mi">1</span> <span class="k">AS</span> <span class="s1">'step'</span>
+	<span class="k">FROM</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span>
+	<span class="k">UNION</span> <span class="k">ALL</span>
+	<span class="k">SELECT</span> <span class="n">child</span><span class="p">.</span><span class="n">val</span><span class="p">,</span> <span class="n">cte_scale</span><span class="p">.</span><span class="n">initial</span><span class="p">,</span> <span class="n">cte_scale</span><span class="p">.</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span>
+	<span class="k">FROM</span> <span class="n">cte_scale</span> <span class="k">JOIN</span> <span class="n">dbo</span><span class="p">.</span><span class="k">scale</span> <span class="n">child</span> <span class="k">ON</span> <span class="n">child</span><span class="p">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">cte_scale</span><span class="p">.</span><span class="n">val</span> <span class="o">*</span> <span class="mi">2</span>
+	<span class="k">WHERE</span> <span class="n">cte_scale</span><span class="p">.</span><span class="n">step</span> <span class="o">&lt;</span> <span class="mi">4</span>
+<span class="p">)</span>
+<span class="k">SELECT</span> <span class="n">val</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">step</span>
+<span class="k">FROM</span> <span class="n">cte_scale</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p><img src="https://media.githubusercontent.com/media/vitawebsitedesign/blog/master/assets/o(n%20log%20n).jpg" alt="O n log n execution plan" title="O n log n execution plan" /></p>
+
+<h3 id="calculating-big-o-for-this-algorithm">Calculating Big O for this algorithm</h3>
+<p>Firstly, we ignore constants when calculating Big O. So let’s weed out the constant 8 rows we use as our recursive CTE anchor.</p>
+
+<p>Secondly, we only focus on the “meat” when calculating Big O. Relatively speaking, index seeks (that dont lead to key lookups) are cheap compared to nested <code class="language-plaintext highlighter-rouge">INNER LOOP</code> operations.</p>
+
+<p>Thirdly, we only care about the worst-case scenario when calculating Big O. The worst case for this algorithm is starting with “1”, because that starting point involves the most operations (1 will keep squaring until it hits the biggest value in our table - 64)</p>
+
+<p>This leaves us with the nested loop operation, which outputs 24 rows (i.e.: the outer loop used an inner loop 24 times). So this means <strong>24</strong> executions (<strong>8</strong> algorithm executions, multiplied by the <strong>3</strong> recursive steps occurring in each run).</p>
+
+<p>Whilst we have put limits on our algorithm for demonstration sakes, we have to theoretically remove these limits in order to calculate Big O. The limits we applied were:</p>
+<ul>
+  <li>A max number of algorithm executions limited to 8</li>
+  <li>A max recursion step of 3 within each run</li>
+</ul>
+
+<h3 id="theoretical-asymptotic-limits">Theoretical asymptotic limits</h3>
+<p>With the limits removed, our table would realistically have a much larger max value (much larger than 64). From a pragmatic perspective, real-world tables usually have millions/billions of rows, so think about a max value of say… <strong>100,000,000</strong> instead of <strong>64</strong>.</p>
+
+<p>Additionally, the worst-case time-complexity for our algorithm is when the “keep squaring” operation starts from the smallest number (i.e.: 1).</p>
+
+<p>So now we have an <code class="language-plaintext highlighter-rouge">O(log n)</code> operation - the “recursive squaring” CTE, which is run for each row in the table - i.e.: <code class="language-plaintext highlighter-rouge">n</code> times.</p>
+
+<p>Therefore, the scalability (in the form of a math formula) is:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">n</code> multiplied by <code class="language-plaintext highlighter-rouge">O(log n)</code></li>
+  <li>…or <code class="language-plaintext highlighter-rouge">n * log(n)</code></li>
+  <li>…or <code class="language-plaintext highlighter-rouge">n log(n)</code></li>
+  <li>…or <code class="language-plaintext highlighter-rouge">O(n log n)</code></li>
+</ul>
+
+<h2 id="the-dangers-of-ignoring-scalability">The dangers of ignoring scalability</h2>
+<p>A characteristic of startup companies is that they start with a small amount of customers, which then (hopefully) grows over time.</p>
+
+<h3 id="data-growth--low-detectability--danger">Data growth + low detectability = danger</h3>
+<p>This means they start with a small amount of data, but then that data size grows significantly over time. And it KEEPS growing - in fact, there’s usually more data coming IN from customer use, than the number of rows going OUT (e.g.: archiving or permanent deletion).</p>
+
+<p>But thats not the problem - the ACTUAL problem is that database stuff is expensive to fix - its a long process, sql is less malleable than UI or API code, and the most important queries (which run against the most data) are complex, because programmers need to continually trade understandability for performance to maintain uptime against the ever-increasing customer load.</p>
+
+<p>This is a huge expense for a business.</p>
+
+<p>And it doesnt help that everything runs fast with small datasets, therefore making these kinds of scalability issues fly under the radar, and make a surprise appearance in prod when the issue has already affected customers.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+<p>By making database operations scalable early in the development cycle (rather than later when its already in production), we can minimise the long-term business cost for our companies, as well as managing the technical debt for our software team.</p>
+
+<p>You’d be surprised how much money, time &amp; effort you save down the line, &amp; all it takes is a couple of extra hours tuning execution plans.</p>
+
+  </div><a class="u-url" href="/blog/2019/10/09/calculating-big-o-time-complexity-for-sql-server-execution-plans.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/blog/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Read-only is just an implementation of immutablity | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Read-only is just an implementation of immutablity" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The System.Collections.Generic .NET namespace has a IReadOnlyCollection&lt;T&gt; interface." />
+<meta property="og:description" content="The System.Collections.Generic .NET namespace has a IReadOnlyCollection&lt;T&gt; interface." />
+<link rel="canonical" href="vitawebsitedesign.github.io/blog/2019/10/23/read-only-is-just-an-implementation-of-immutablity.html" />
+<meta property="og:url" content="vitawebsitedesign.github.io/blog/2019/10/23/read-only-is-just-an-implementation-of-immutablity.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-10-23T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Read-only is just an implementation of immutablity" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-10-23T00:00:00+00:00","datePublished":"2019-10-23T00:00:00+00:00","description":"The System.Collections.Generic .NET namespace has a IReadOnlyCollection&lt;T&gt; interface.","headline":"Read-only is just an implementation of immutablity","mainEntityOfPage":{"@type":"WebPage","@id":"vitawebsitedesign.github.io/blog/2019/10/23/read-only-is-just-an-implementation-of-immutablity.html"},"url":"vitawebsitedesign.github.io/blog/2019/10/23/read-only-is-just-an-implementation-of-immutablity.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/blog/assets/main.css">
+  <link rel="stylesheet" href="/blog/assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="vitawebsitedesign.github.io/blog/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/blog/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#read-only">Read-only</a></li>
+<li class="toc-entry toc-h2"><a href="#mutating-shared-address-space">Mutating shared address space</a></li>
+<li class="toc-entry toc-h2"><a href="#why-even-bother">Why even bother?</a></li>
+<li class="toc-entry toc-h2"><a href="#pure-function-examples">Pure function examples</a></li>
+<li class="toc-entry toc-h2"><a href="#true-immutability">True immutability</a></li>
+<li class="toc-entry toc-h2"><a href="#there-is-never-a-free-lunch">There is never a free lunch</a></li>
+<li class="toc-entry toc-h2"><a href="#closing-notes">Closing notes</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Read-only is just an implementation of immutablity</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-10-23T00:00:00+00:00" itemprop="datePublished">
+        Oct 23, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>The <code class="language-plaintext highlighter-rouge">System.Collections.Generic</code> .NET namespace has a <code class="language-plaintext highlighter-rouge">IReadOnlyCollection&lt;T&gt;</code> interface.</p>
+
+<p>But when <code class="language-plaintext highlighter-rouge">System.Collections.Immutable</code> enters the game, things start to get confusing. Aren’t read-only collections immutable?</p>
+
+<p>Before diving into that question; what does read-only even mean in C#?</p>
+
+<h2 id="read-only">Read-only</h2>
+<blockquote>
+  <p>“In a ref readonly method return, the <a href="https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/readonly">readonly modifier</a> indicates that method returns a reference and writes are not allowed to that reference”</p>
+</blockquote>
+
+<p>The key phrases here are “reference” - specifically, “writes are not allowed to that reference”.</p>
+
+<p>Calling methods that mutate state on an <code class="language-plaintext highlighter-rouge">IReadOnlyCollection&lt;T&gt;</code> instance (i.e.: a read-only ref type) raises exceptions.</p>
+
+<p>However there <em>is</em> a caveat. Since C# is (in some ways) an abstraction of C++, it’s possible to have 2 variables referencing the same address space.</p>
+
+<h2 id="mutating-shared-address-space">Mutating shared address space</h2>
+<p>Read-only means:</p>
+
+<ul>
+  <li>One cannot mutate state using read-only variables.</li>
+  <li>But one CAN mutate state using non read-only variables.</li>
+</ul>
+
+<p>Given these 2 points, it is therefore possible to mutate the address space referenced by a read-only variable:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">items</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="p">{</span> <span class="m">1</span> <span class="p">};</span>	<span class="c1">// Normal variable</span>
+<span class="kt">var</span> <span class="n">wrapper</span> <span class="p">=</span> <span class="n">items</span><span class="p">.</span><span class="nf">AsReadOnly</span><span class="p">();</span>	<span class="c1">// Read-only variable</span>
+<span class="n">items</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>						<span class="c1">// Use normal variable to modify same address space (thats also referenced by the read-only variable)</span>
+
+<span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">item</span> <span class="k">in</span> <span class="n">wrapper</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">item</span><span class="p">);</span>	<span class="c1">// Prints: 1, 2</span>
+<span class="p">}</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">ReadKey</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p>And thus, we have “modified” a read-only collection. If this is possible, then why does <code class="language-plaintext highlighter-rouge">IReadOnlyCollection&lt;T&gt;</code> exist?</p>
+
+<h2 id="why-even-bother">Why even bother?</h2>
+<p>Developers may not want consumers mutating the data they return, because it opens up additional scenarios that the original developer didn’t design for, and this leads to potential future bugs.</p>
+
+<p>And let’s face it, if a consumer can do something, they will probably end up doing it.</p>
+
+<p>To help developers in this use case, the .NET team decided to expose all the state modification methods on <a href="https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1?view=netframework-4.8">List</a> instead of <a href="https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.ilist-1?view=netframework-4.8">IList</a>.</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">mutableList</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="p">{</span> <span class="m">1</span> <span class="p">};</span>
+<span class="kt">var</span> <span class="n">readOnlyList</span> <span class="p">=</span> <span class="n">mutableList</span><span class="p">.</span><span class="nf">AsReadOnly</span><span class="p">();</span>
+<span class="p">((</span><span class="n">IList</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;)</span><span class="n">readOnlyList</span><span class="p">).</span><span class="nf">Add</span><span class="p">(</span><span class="m">1</span><span class="p">);</span> <span class="c1">// Static compilation error: methods like Add are only exposed on List&lt;T&gt;, not IReadOnlyCollection&lt;T&gt;</span>
+</code></pre></div></div>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">mutableList</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="p">{</span> <span class="m">1</span> <span class="p">};</span>
+<span class="kt">var</span> <span class="n">readOnlyList</span> <span class="p">=</span> <span class="n">mutableList</span><span class="p">.</span><span class="nf">AsReadOnly</span><span class="p">();</span>
+<span class="p">(</span><span class="n">readOnlyList</span> <span class="k">as</span> <span class="n">IList</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;).</span><span class="nf">Add</span><span class="p">(</span><span class="m">1</span><span class="p">);</span> <span class="c1">// Static compilation error: methods like Add are only exposed on List&lt;T&gt;, not IReadOnlyCollection&lt;T&gt;</span>
+</code></pre></div></div>
+
+<p>Whilst this sets up a “do not touch” barrier for consumers, it still does not solve the shared address space modification problem.</p>
+
+<p>Look i’ll be honest. Read-only collections just “help” encourage consumers to do the right thing, pushing them in the right direction. But theres no guarantee that they’ll play nicely.</p>
+
+<p>Think of speed limit rules for school zones. Whilst it encourages drivers to slow down and minimise fatalities, theres nothing there to physically enforce a car’s max speed when the driver is in a school zone.</p>
+
+<p>And this is why <code class="language-plaintext highlighter-rouge">System.Collections.Immutable</code> was introduced. To enforce consumer behaviour by converting state modification methods into pure functions.</p>
+
+<h2 id="pure-function-examples">Pure function examples</h2>
+<p>Before diving into <code class="language-plaintext highlighter-rouge">System.Collections.Immutable</code>, it’s useful to look at the application of pure functions.</p>
+
+<p>In fact, <a href="https://en.wikipedia.org/wiki/Pure_function">pure function</a> examples already exist. E.g. <a href="https://referencesource.microsoft.com/#mscorlib/system/collections/generic/list.cs,2b710ab0bc8866ad">GenericList.AsReadOnly</a>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="n">ReadOnlyCollection</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="nf">AsReadOnly</span><span class="p">()</span> <span class="p">{</span>
+	<span class="p">...</span>
+	<span class="k">return</span> <span class="k">new</span> <span class="n">ReadOnlyCollection</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="k">internal</span> <span class="k">sealed</span> <span class="k">class</span> <span class="nc">ReadOnlyCollection</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">...</span>
+<span class="p">{</span>
+	<span class="k">internal</span> <span class="nf">ReadOnlyCollection</span><span class="p">(</span><span class="n">T</span><span class="p">[]</span> <span class="n">items</span><span class="p">)</span> <span class="p">{</span>
+		<span class="n">_items</span> <span class="p">=</span> <span class="n">items</span><span class="p">;</span>
+		<span class="p">...</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Or perhaps you fancy the string interpolation feature from C# 6:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">var1</span> <span class="p">=</span> <span class="s">"bleh"</span><span class="p">;</span>
+<span class="kt">var</span> <span class="n">str</span> <span class="p">=</span> <span class="s">$"</span><span class="p">{</span><span class="n">var1</span><span class="p">}</span><span class="s"> goes the weasle"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>In the above example, the string interpolation calls <a href="https://referencesource.microsoft.com/#mscorlib/system/string.cs,8281103e6f23cb5c">.NET’s String.Concat(Object, Object) code</a>, which returns a <strong>new</strong> <code class="language-plaintext highlighter-rouge">String</code> instance:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">static</span> <span class="n">String</span> <span class="nf">Concat</span><span class="p">(</span><span class="n">String</span> <span class="n">str0</span><span class="p">,</span> <span class="n">String</span> <span class="n">str1</span><span class="p">)</span> <span class="p">{</span>
+	<span class="p">...</span>
+	<span class="kt">int</span> <span class="n">str0Length</span> <span class="p">=</span> <span class="n">str0</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span>
+	<span class="n">String</span> <span class="n">result</span> <span class="p">=</span> <span class="nf">FastAllocateString</span><span class="p">(</span><span class="n">str0Length</span> <span class="p">+</span> <span class="n">str1</span><span class="p">.</span><span class="n">Length</span><span class="p">);</span>
+	<span class="nf">FillStringChecked</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span>        <span class="n">str0</span><span class="p">);</span>
+	<span class="nf">FillStringChecked</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">str0Length</span><span class="p">,</span> <span class="n">str1</span><span class="p">);</span>
+	
+	<span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">unsafe</span> <span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">FillStringChecked</span><span class="p">(</span><span class="n">String</span> <span class="n">dest</span><span class="p">,</span> <span class="kt">int</span> <span class="n">destPos</span><span class="p">,</span> <span class="n">String</span> <span class="n">src</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="p">...</span>
+	<span class="k">fixed</span><span class="p">(</span><span class="kt">char</span> <span class="p">*</span><span class="n">pDest</span> <span class="p">=</span> <span class="p">&amp;</span><span class="n">dest</span><span class="p">.</span><span class="n">m_firstChar</span><span class="p">)</span>
+		<span class="k">fixed</span> <span class="p">(</span><span class="kt">char</span> <span class="p">*</span><span class="n">pSrc</span> <span class="p">=</span> <span class="p">&amp;</span><span class="n">src</span><span class="p">.</span><span class="n">m_firstChar</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nf">wstrcpy</span><span class="p">(</span><span class="n">pDest</span> <span class="p">+</span> <span class="n">destPos</span><span class="p">,</span> <span class="n">pSrc</span><span class="p">,</span> <span class="n">src</span><span class="p">.</span><span class="n">Length</span><span class="p">);</span>
+		<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">internal</span> <span class="k">static</span> <span class="k">unsafe</span> <span class="k">void</span> <span class="nf">wstrcpy</span><span class="p">(</span><span class="kt">char</span> <span class="p">*</span><span class="n">dmem</span><span class="p">,</span> <span class="kt">char</span> <span class="p">*</span><span class="n">smem</span><span class="p">,</span> <span class="kt">int</span> <span class="n">charCount</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">Buffer</span><span class="p">.</span><span class="nf">Memcpy</span><span class="p">((</span><span class="kt">byte</span><span class="p">*)</span><span class="n">dmem</span><span class="p">,</span> <span class="p">(</span><span class="kt">byte</span><span class="p">*)</span><span class="n">smem</span><span class="p">,</span> <span class="n">charCount</span> <span class="p">*</span> <span class="m">2</span><span class="p">);</span> <span class="c1">// 2 used everywhere instead of sizeof(char)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Explanation: <code class="language-plaintext highlighter-rouge">Concat</code> calls <code class="language-plaintext highlighter-rouge">FastAllocateString</code> (which returns a new String instance), then <code class="language-plaintext highlighter-rouge">wstrcpy</code> is called twice to copy both strings into the new String instance.</p>
+
+<p>In other words - it’s a pure function, and that is what makes <code class="language-plaintext highlighter-rouge">System.String</code> immutable.</p>
+
+<p>At this point, strong evidence exists that pure functions allow one to prevent state modification by making mutation methods return new instances instead.</p>
+
+<p>It’s almost as if pure functions is all the .NET team needs to bring devs <strong>true</strong> immutability.</p>
+
+<h2 id="true-immutability">True immutability</h2>
+<p>And this is what happened. Microsoft sat around a table, stroking their beards with glee, and started using pure functions.</p>
+
+<p>The end result? <code class="language-plaintext highlighter-rouge">System.Collections.Immutable</code>. A namespace full of interfaces and classes that make mutable methods return new instances (instead of modifying state):</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">items</span> <span class="p">=</span> <span class="k">new</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span> <span class="p">}.</span><span class="nf">ToImmutableList</span><span class="p">();</span>
+<span class="kt">var</span> <span class="n">wrapper</span> <span class="p">=</span> <span class="n">items</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>		<span class="c1">// Add() returns a new instance, rather than modifying the memory in-place</span>
+</code></pre></div></div>
+
+<p>This is proven by cross-checking <a href="https://github.com/dotnet/corefx/blob/a866d9643f23ddd2f47762e02ccdd2e387a8e5c8/src/System.Collections.Immutable/src/System/Collections/Immutable/ImmutableList_1.cs#L19">the .NET source</a>:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">sealed</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">ImmutableList</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">:</span> <span class="p">...</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="n">Pure</span><span class="p">]</span>
+	<span class="k">public</span> <span class="n">ImmutableList</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="nf">Add</span><span class="p">(</span><span class="n">T</span> <span class="k">value</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">_root</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="k">value</span><span class="p">);</span>
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nf">Wrap</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+	<span class="p">}</span>
+	
+	<span class="p">...</span>
+			
+	<span class="p">[</span><span class="n">Pure</span><span class="p">]</span>
+	<span class="k">private</span> <span class="n">ImmutableList</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="nf">Wrap</span><span class="p">(</span><span class="n">Node</span> <span class="n">root</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">root</span> <span class="p">!=</span> <span class="n">_root</span><span class="p">)</span>
+		<span class="p">{</span>
+			<span class="k">return</span> <span class="n">root</span><span class="p">.</span><span class="n">IsEmpty</span> <span class="p">?</span> <span class="k">this</span><span class="p">.</span><span class="nf">Clear</span><span class="p">()</span> <span class="p">:</span> <span class="k">new</span> <span class="n">ImmutableList</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">root</span><span class="p">);</span>
+		<span class="p">}</span>
+		<span class="k">else</span>
+		<span class="p">{</span>
+			<span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>And just like that, <em>true immutability</em> has been achieved.</p>
+
+<p>Now consumers can’t do something stupid. Hey, who’s complaining? - it gives you one less thing to worry about in the complex world of programming.</p>
+
+<p>Gosh, it seems so powerful. Does this mean you should rewrite all your code to use Immutable collections instead?</p>
+
+<h2 id="there-is-never-a-free-lunch">There is never a free lunch</h2>
+<p>Every software decision is about trading off something for something. Just because you see the word “immutable” doesn’t mean you should start touching yourself and use it without thought.</p>
+
+<p>After all, switching from mutable to immutable collections trades efficiency for <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming)">encapsulation</a>.</p>
+
+<p>But basically, unless you require supreme performance during state modification operations, strive for the true immutable collections.</p>
+
+<h2 id="closing-notes">Closing notes</h2>
+<p>Read-only refers to preventing write methods being called on a variable, &amp; Immutability refers to pure methods returning new instances.</p>
+
+<p>Whilst instantiating new instances costs more time &amp; space than modifying values in-memory, immutable colections prevent consumers from tampering with data they’re not meant to.</p>
+
+<p>This ensures that the code we designed is only exposed to the use cases that we initially expected at design time, therefore minimising sneaky bugs.</p>
+
+  </div><a class="u-url" href="/blog/2019/10/23/read-only-is-just-an-implementation-of-immutablity.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/blog/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
