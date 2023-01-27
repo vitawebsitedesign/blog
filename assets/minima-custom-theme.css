@@ -60,6 +60,7 @@
 }
 
 body {
+  background-color: #fff;
   background-image: url("/blog/assets/bg-geometry.jpg");
   background-position: top center;
   background-size: 60% 150px;
