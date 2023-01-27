@@ -60,7 +60,7 @@
 }
 
 body {
-  background-image: url("./bg-geometry-lines.jpg");
+  background-image: url("/blog/assets/bg-geometry-lines-faint.jpg");
   background-position: top center;
   background-size: 60% 150px;
   background-repeat: no-repeat;
