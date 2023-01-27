@@ -189,11 +189,6 @@ ul#toc>li {
   font-size: 0.8rem;
 }
 
-.mjx-chtml.MathJax_CHTML {
-  max-width: 100%;
-  overflow: scroll;
-}
-
 .rss-subscribe {
   display: none;
 }
