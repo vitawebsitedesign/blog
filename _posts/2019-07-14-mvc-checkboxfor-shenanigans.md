@@ -2,6 +2,7 @@
 title: MVC Html.CheckboxFor Shenanigans
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 Html.DropDownFor() generates below html:

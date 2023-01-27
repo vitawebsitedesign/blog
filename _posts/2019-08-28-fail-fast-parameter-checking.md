@@ -2,6 +2,7 @@
 title: Achieving fail-fast cheaply & effectively
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 The best part about fail-fast systems is the reduced debugging effort.
 

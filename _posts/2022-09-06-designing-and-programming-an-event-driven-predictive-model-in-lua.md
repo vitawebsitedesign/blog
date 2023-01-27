@@ -2,6 +2,7 @@
 title: Designing and programming an event-driven predictive model in Lua
 layout: post
 author: Michael Nguyen
+toc: true
 use_math: true
 ---
 

@@ -2,6 +2,7 @@
 title: T-SQL offset & fetch IO performance
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 When using offset/fetch in query, execution plan shows query optimizer leveraging that info to minimise rows read.
 

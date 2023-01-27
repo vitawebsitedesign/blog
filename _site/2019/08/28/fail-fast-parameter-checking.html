@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Achieving fail-fast cheaply &amp; effectively | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Achieving fail-fast cheaply &amp; effectively" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The best part about fail-fast systems is the reduced debugging effort." />
+<meta property="og:description" content="The best part about fail-fast systems is the reduced debugging effort." />
+<link rel="canonical" href="http://localhost:4000/2019/08/28/fail-fast-parameter-checking.html" />
+<meta property="og:url" content="http://localhost:4000/2019/08/28/fail-fast-parameter-checking.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-08-28T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Achieving fail-fast cheaply &amp; effectively" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-08-28T00:00:00+10:00","datePublished":"2019-08-28T00:00:00+10:00","description":"The best part about fail-fast systems is the reduced debugging effort.","headline":"Achieving fail-fast cheaply &amp; effectively","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/08/28/fail-fast-parameter-checking.html"},"url":"http://localhost:4000/2019/08/28/fail-fast-parameter-checking.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#disadvantages-of-fail-fast">Disadvantages of fail-fast</a></li>
+<li class="toc-entry toc-h2"><a href="#with-fail-fast">With fail-fast:</a></li>
+<li class="toc-entry toc-h2"><a href="#when-parameter-checking-stops-becoming-a-cheap--effective-tool-in-achieving-fail-fast">When parameter checking stops becoming a cheap &amp; effective tool in achieving fail-fast</a></li>
+<li class="toc-entry toc-h2"><a href="#unnecessary-preflight-checks-prior-to-data-mutation-operations">Unnecessary preflight checks prior to data mutation operations</a></li>
+<li class="toc-entry toc-h2"><a href="#but-i-should-always-check-parameters-right-to-be-a-good-programmer">But i should always check parameters, right? To be a good programmer?</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Achieving fail-fast cheaply &amp; effectively</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-08-28T00:00:00+10:00" itemprop="datePublished">
+        Aug 28, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>The best part about fail-fast systems is the reduced debugging effort.</p>
+
+<p>The stack trace shows the earliest point of failure, and you can just shove in breakpoints and see what happens.</p>
+
+<p>A non-fail-fast system would failure alot later, and the stack trace entries might be so late that you’ll probably have to backtrack your initial breakpoint position with guesswork.</p>
+
+<p>One way to achieving fail-fast is parameter checking - a cheap and effective method.</p>
+
+<h2 id="disadvantages-of-fail-fast">Disadvantages of fail-fast</h2>
+<p>Before going on to the “how to achieve fail-fast cheap &amp; effectively”, we should note that the primary disadvantage of fail-fast is that additional code is written, and this translates into increased maintenance cost.</p>
+
+<p>When the system changes in the future, perhaps input that used to be invalid is now valid, and now the code that checks input must be updated (as well as any code that handled the failure).</p>
+
+<p>For example, assume we have a database table:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">taco</span> <span class="p">(</span>
+	<span class="n">id</span> <span class="nb">INT</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="k">IDENTITY</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="with-fail-fast">With fail-fast:</h2>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="kt">int</span> <span class="nf">GetTaco</span><span class="p">(</span><span class="kt">int</span> <span class="n">tacoId</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">tacoId</span> <span class="p">&gt;</span> <span class="m">0</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">_db</span><span class="p">.</span><span class="n">tacos</span><span class="p">.</span><span class="nf">Find</span><span class="p">(</span><span class="n">t</span> <span class="p">=&gt;</span> <span class="n">t</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">tacoId</span><span class="p">);</span>
+	<span class="p">}</span>
+	<span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentOutOfRangeException</span><span class="p">(</span><span class="k">nameof</span><span class="p">(</span><span class="n">tacoId</span><span class="p">));</span>		<span class="c1">// Defensively programming here - we assume default will NOT be handled downstream</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Fast forwarding into the future, perhaps our <code class="language-plaintext highlighter-rouge">IDENTITY</code> column will change so that taco ID of 0 is valid:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">taco</span> <span class="p">(</span>
+	<span class="n">id</span> <span class="nb">INT</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="k">IDENTITY</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>And so now the parameter checking code needs to be updated to:</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="kt">int</span> <span class="nf">GetTaco</span><span class="p">(</span><span class="kt">int</span> <span class="n">tacoId</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">tacoId</span> <span class="p">&gt;</span> <span class="p">-</span><span class="m">2</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">_db</span><span class="p">.</span><span class="n">tacos</span><span class="p">.</span><span class="nf">Find</span><span class="p">(</span><span class="n">t</span> <span class="p">=&gt;</span> <span class="n">t</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">tacoId</span><span class="p">);</span>
+	<span class="p">}</span>
+	<span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentOutOfRangeException</span><span class="p">(</span><span class="k">nameof</span><span class="p">(</span><span class="n">tacoId</span><span class="p">));</span>		<span class="c1">// Defensively programming here - we assume default will NOT be handled downstream</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>And…. boned. An extra expense for the team.</p>
+
+<h2 id="when-parameter-checking-stops-becoming-a-cheap--effective-tool-in-achieving-fail-fast">When parameter checking stops becoming a cheap &amp; effective tool in achieving fail-fast</h2>
+<p>This answer mostly depends on the consequence when invalid parameters are passed in, as well as system behaviour after the function call.</p>
+
+<p>Parameter checking is best done prior to data mutation operations, because data mutation operations can cause severe headaches when life goes sideways.</p>
+
+<p>For data retrieval operations, it usually depends on the system behaviour severity.</p>
+
+<p>For example, if invalid parameters silently invalid data to be shown in a medical UI, you should check the parameter because the bug severity is higher (potential loss of human life) due to the lower detection and incorrect signals.</p>
+
+<p>But if the system were, for example, not show data in the UI for invaild parameters, then we lose the “cheap &amp; effective” benefits from parameter checking. In fact, its actually redundant as you’d have 2 sets of code to handle the same situation:</p>
+
+<ul>
+  <li>Returning sentinel value when invalid parameters returned</li>
+  <li>Then UI receives this sentinel value and portrays system state accordingly</li>
+</ul>
+
+<p>When you could just have:</p>
+
+<ul>
+  <li>UI portrays system state accordingly depending on received value</li>
+</ul>
+
+<h2 id="unnecessary-preflight-checks-prior-to-data-mutation-operations">Unnecessary preflight checks prior to data mutation operations</h2>
+<p>With the above arguments in mind, there is 1 exception when it comes to data mutation ops.</p>
+
+<p>And this is checking parameters to determine app logic, when the parameters are already checked on the database side.</p>
+
+<p>This is known as a preflight request. Consider the below example (with entity framework):</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="nf">GetTaco</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">var</span> <span class="n">alreadyExists</span> <span class="p">=</span> <span class="n">_db</span><span class="p">.</span><span class="n">taco</span><span class="p">.</span><span class="nf">Any</span><span class="p">(</span><span class="n">t</span> <span class="p">=&gt;</span> <span class="n">t</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">id</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(!</span><span class="n">alreadyExists</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kt">var</span> <span class="n">newTaco</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Taco</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+		<span class="n">_db</span><span class="p">.</span><span class="n">taco</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">newTaco</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">_db</span><span class="p">.</span><span class="nf">SaveChangesAsync</span><span class="p">();</span>
+		<span class="k">return</span> <span class="n">newTaco</span><span class="p">.</span><span class="n">id</span><span class="p">;</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="k">default</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Theres no point to checking the parameter id. The database already checks parameters in the form of data integrity.</p>
+
+<p>Theres just more code on our side, which just replicates behaviour the database will do when you insert a duplicate primary key value.</p>
+
+<p>So with this code just adding an extra request to the server, perhaps a lower-cost alternative equivalent would serve best?:</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="nf">GetTaco</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">var</span> <span class="n">newTaco</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Taco</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+	<span class="n">_db</span><span class="p">.</span><span class="n">taco</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">newTaco</span><span class="p">);</span>
+
+	<span class="k">try</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">_db</span><span class="p">.</span><span class="nf">SaveChangesAsync</span><span class="p">();</span>
+	<span class="p">}</span>
+	<span class="k">catch</span>
+	<span class="p">{</span>
+		<span class="k">return</span> <span class="k">default</span><span class="p">;</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="n">newTaco</span><span class="p">.</span><span class="n">id</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Now we dont check parameters twice, and its just done once by the database engine.</p>
+
+<p>Its:</p>
+
+<ul>
+  <li>Less code (lower maintainability cost for entire codebase)</li>
+  <li>Its faster due to 1 less db request</li>
+  <li>And we shift responsibility to the database engine (which presumably will do a better job anyway).</li>
+</ul>
+
+<p>And if we tried to insert a duplicate primary key value, a db exception will throw, and we return <code class="language-plaintext highlighter-rouge">default</code>.</p>
+
+<p>The exact same behaviour as we had before, but with less code.</p>
+
+<p>By NOT checking parameters, we have achieved fail-fast in a cheaper &amp; more effective way.</p>
+
+<h2 id="but-i-should-always-check-parameters-right-to-be-a-good-programmer">But i should always check parameters, right? To be a good programmer?</h2>
+<p>Perhaps you doing an unnecessary preflight gives you a ego kick, but <a href="https://softwareengineering.stackexchange.com/a/378671">its just unnecessary weight</a>.</p>
+
+<p>But in the end, its less about being a good programmer, and more about making good future-proof code for the team.</p>
+
+  </div><a class="u-url" href="/2019/08/28/fail-fast-parameter-checking.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

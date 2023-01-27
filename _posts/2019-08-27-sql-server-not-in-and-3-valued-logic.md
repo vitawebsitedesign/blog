@@ -2,6 +2,7 @@
 title: SQL Server "NOT IN" with 3-valued logic
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 SQL Server uses booleans. Specifically, the logic system used is Kleene's 3-valued logic.
 

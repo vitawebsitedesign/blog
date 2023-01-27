@@ -2,6 +2,7 @@
 title: Trust is an uphill battle in Ethereum's 2.0 blockchain network
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 ## Summary

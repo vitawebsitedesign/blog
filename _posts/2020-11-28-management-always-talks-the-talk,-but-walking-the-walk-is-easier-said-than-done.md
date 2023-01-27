@@ -2,6 +2,7 @@
 title: Management always talks the talk, but walking the walk is easier said than done
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 Even though all companies expect a certain rate of turnover, losing key personnel can disrupt key project outcomes, by the unexpected increase of **project expenditure**.

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Exploring the parallel options in the nUnit execution framework | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Exploring the parallel options in the nUnit execution framework" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Every build server has a cpu limit, and once you hit it you’ll find your nUnit tests taking forever to finish, ultimately slowing down your build process." />
+<meta property="og:description" content="Every build server has a cpu limit, and once you hit it you’ll find your nUnit tests taking forever to finish, ultimately slowing down your build process." />
+<link rel="canonical" href="http://localhost:4000/2019/10/01/parallelizable-nunit-fixtures-and-testcases.html" />
+<meta property="og:url" content="http://localhost:4000/2019/10/01/parallelizable-nunit-fixtures-and-testcases.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-10-01T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Exploring the parallel options in the nUnit execution framework" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-10-01T00:00:00+10:00","datePublished":"2019-10-01T00:00:00+10:00","description":"Every build server has a cpu limit, and once you hit it you’ll find your nUnit tests taking forever to finish, ultimately slowing down your build process.","headline":"Exploring the parallel options in the nUnit execution framework","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/10/01/parallelizable-nunit-fixtures-and-testcases.html"},"url":"http://localhost:4000/2019/10/01/parallelizable-nunit-fixtures-and-testcases.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#parallelizable">Parallelizable</a></li>
+<li class="toc-entry toc-h2"><a href="#parallelscopechildren">ParallelScope.Children</a></li>
+<li class="toc-entry toc-h2"><a href="#parallelscopefixtures">ParallelScope.Fixtures</a></li>
+<li class="toc-entry toc-h2"><a href="#parallelscopeall">ParallelScope.All</a></li>
+<li class="toc-entry toc-h2"><a href="#let-the-confusion-begin-parallelscopeall-vs-parallelscopeself">Let the confusion begin! ParallelScope.All vs ParallelScope.Self</a></li>
+<li class="toc-entry toc-h2"><a href="#hitting-the-cpu-core-limit">Hitting the CPU core limit</a></li>
+<li class="toc-entry toc-h2"><a href="#closing-notes">Closing notes</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#stamta">STA/MTA?</a></li>
+<li class="toc-entry toc-h3"><a href="#deterministic">Deterministic?</a></li>
+<li class="toc-entry toc-h3"><a href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Exploring the parallel options in the nUnit execution framework</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-10-01T00:00:00+10:00" itemprop="datePublished">
+        Oct 1, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Every build server has a cpu limit, and once you hit it you’ll find your nUnit tests taking forever to finish, ultimately slowing down your build process.</p>
+
+<p>Thankfully, we can run nUnit tests in parallel by using the <code class="language-plaintext highlighter-rouge">Parallelizable</code> attribute. This tells the runner to run “stuff” in parallel mode.</p>
+
+<p>I use the word “stuff”, because theres multiple “levels” (i’ll get to this later) we can configure, using <a href="https://github.com/nunit/docs/wiki/Parallelizable-Attribute">4 different parallel modes</a> to choose from.</p>
+
+<p>And hence, this can get confusing fast. I’ll explain this through examples, which are listed in a different order than the documentation in order to aid understandability.</p>
+
+<p>Before starting this party, the below examples use the Visual Studio nUnit runner (rather than the CLI runner). This is an important fact because:</p>
+
+<blockquote>
+  <p>“Parallel execution is <a href="https://github.com/nunit/docs/wiki/Engine-Parallel-Test-Execution">the default behavior</a> when running multiple assemblies together using the nunit3-console runner”</p>
+</blockquote>
+
+<p>And since we aren’t using the CLI tool to run our tests, then:</p>
+
+<blockquote>
+  <p>“By <a href="https://github.com/nunit/docs/wiki/Framework-Parallel-Test-Execution">default</a>, no parallel execution takes place”</p>
+</blockquote>
+
+<p>Note: in order to understand all of this, try think of parallelable tests as 2 layers - your test cases (i.e.: the functions), and your fixtures (i.e.: the classes that hold the test cases).</p>
+
+<h2 id="parallelizable">Parallelizable</h2>
+<p>The <code class="language-plaintext highlighter-rouge">Parallelizable</code> C# attribute is something you can put on test fixture classes and/or test case functions. It makes it run in parallel on a separate, new thread. Example:</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">()]</span>
+</code></pre></div></div>
+
+<p>It takes in 1 argument, which happens to be an enumeration that allows us to use 4 possible “parallel modes”. And the first one we will look at is <code class="language-plaintext highlighter-rouge">ParallelScope.Children</code>, which is usually used on test fixtures (the class that holds your test functions). Example:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Children</span><span class="p">)]</span>
+</code></pre></div></div>
+
+<h2 id="parallelscopechildren">ParallelScope.Children</h2>
+<p>The official <a href="https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration">nUnit description</a> for this “parallel mode” is:</p>
+
+<blockquote>
+  <p>“child tests may be run in parallel with one another”</p>
+</blockquote>
+
+<p>In english: test cases in a fixture will run in parallel, but the fixture itself will NOT run in parallel with other fixtures`</p>
+
+<p>For example, given a test case:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">MyTestCase</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>A test fixture for this test case would be a class:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">MyTestCase</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="p">...</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>By using <code class="language-plaintext highlighter-rouge">ParallelScope.Children</code>, we make test cases inside the fixture run in parallel:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Children</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture1</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">A</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"a start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"a end"</span><span class="p">);</span>
+	<span class="p">}</span>
+	
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">B</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"b start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"b end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>In this example, we expect A to start first, then after 3 seconds, B starts too. Running this fixture prints out:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>a start
+b start
+b end
+a end
+</code></pre></div></div>
+
+<p>And this output proves that they run in parallel.</p>
+
+<p>To prove that the fixture does NOT run in parallel with other fixtures, lets add another fixture to the party:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Children</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture1</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">A</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"a start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"a end"</span><span class="p">);</span>
+	<span class="p">}</span>
+	
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">B</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"b start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"b end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Children</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture2</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">C</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"c start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"c end"</span><span class="p">);</span>
+	<span class="p">}</span>
+	
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">D</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"d start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"d end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Which prints out:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>a start
+b start
+b end
+a end
+c start
+d start
+d end
+c end
+</code></pre></div></div>
+
+<p>Test case C (from fixture 2) did not start until the 1st fixture ended.</p>
+
+<p>What about the flip side - what if we want both fixtures to run in parallel, but the test cases in each fixture to run non-parallel (i.e.: sequentially)?</p>
+
+<h2 id="parallelscopefixtures">ParallelScope.Fixtures</h2>
+<p>From <a href="https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration">nUnit documentation</a>:</p>
+
+<blockquote>
+  <p>“fixtures may be run in parallel with one another”</p>
+</blockquote>
+
+<p>If we run our previous C# example again (except with <code class="language-plaintext highlighter-rouge">ParallelScope.Fixtures</code> in place of <code class="language-plaintext highlighter-rouge">ParallelScope.Children</code>), we get:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c start
+a start
+c end
+a end
+d start
+b start
+d end
+b end
+</code></pre></div></div>
+
+<p>With <code class="language-plaintext highlighter-rouge">A</code> &amp; <code class="language-plaintext highlighter-rouge">C</code> starting at the same time, this proves that both fixtures start at the same time (i.e.: were running in parallel). Also, <code class="language-plaintext highlighter-rouge">B</code> only starts after <code class="language-plaintext highlighter-rouge">A</code> ends, &amp; <code class="language-plaintext highlighter-rouge">D</code> only starts after <code class="language-plaintext highlighter-rouge">C</code> ends. Hence, the testcases inside each fixture ran sequentially.</p>
+
+<p>But what if we want to go full throttle - running all fixtures in parallel <em>AND</em> the test cases in each fixture in parallel too. This means we want to fire all fixtures and all test cases side-by-side.</p>
+
+<h2 id="parallelscopeall">ParallelScope.All</h2>
+<p>From nUnit documentation:</p>
+
+<blockquote>
+  <p>“the test and its descendants may be run in parallel <a href="https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration">with others at the same level</a>”</p>
+</blockquote>
+
+<p><em>same level</em> means that if you place the <code class="language-plaintext highlighter-rouge">Parallelizable</code> on a fixture, then that fixture will run parallel with other fixtures. And if you place it on a testcase, then that testcase will run parallel with the other testcases in that fixture.</p>
+
+<p>Running our previous example again (except with <code class="language-plaintext highlighter-rouge">ParallelScope.All</code> in place of <code class="language-plaintext highlighter-rouge">ParallelScope.Fixtures</code>), we get:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[9:47:23.362 PM] c start
+[9:47:23.362 PM] a start
+[9:47:26.365 PM] b start
+[9:47:26.368 PM] d start
+[9:47:26.369 PM] b end
+[9:47:26.371 PM] d end
+[9:47:31.369 PM] c end
+[9:47:31.372 PM] a end
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">B</code> and <code class="language-plaintext highlighter-rouge">D</code> started 3 seconds after <code class="language-plaintext highlighter-rouge">A</code> and <code class="language-plaintext highlighter-rouge">C</code> started, and they started BEFORE <code class="language-plaintext highlighter-rouge">A</code> and <code class="language-plaintext highlighter-rouge">C</code> ended. This proves that everything was parallel; both the fixtures &amp; their test cases.</p>
+
+<p>And now, i must explain the final “parallel mode”: <code class="language-plaintext highlighter-rouge">ParallelScope.Self</code></p>
+
+<h2 id="let-the-confusion-begin-parallelscopeall-vs-parallelscopeself">Let the confusion begin! ParallelScope.All vs ParallelScope.Self</h2>
+<p>So far we’ve gone through:</p>
+
+<ul>
+  <li>Parallel fixtures (<code class="language-plaintext highlighter-rouge">ParallelScope.Fixtures</code>)</li>
+  <li>Parallel testcases in a fixture (<code class="language-plaintext highlighter-rouge">ParallelScope.Children</code>)</li>
+  <li>And the “all cylinders firing” option (<code class="language-plaintext highlighter-rouge">ParallelScope.All</code>)</li>
+</ul>
+
+<p>What happens if we want more fine-grain control over whats parallel and whats not parallel? For example, 2 parallel fixtures, where each fixture has 1 parallel testcase &amp; 1 non-parallel testcase?</p>
+
+<p>Enter <code class="language-plaintext highlighter-rouge">ParallelScope.Self</code>. From the nUnit documentation:</p>
+
+<blockquote>
+  <p>“the test itself may be run <a href="https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration">in parallel with other tests</a>”</p>
+</blockquote>
+
+<p>and</p>
+
+<blockquote>
+  <p>“valid on: <a href="https://github.com/nunit/docs/wiki/Parallelizable-Attribute#user-content-parallelscope-enumeration">classes, methods</a>”</p>
+</blockquote>
+
+<p>This “parallel mode” is basically <code class="language-plaintext highlighter-rouge">ParallelScope.Fixtures</code> &amp; <code class="language-plaintext highlighter-rouge">ParallelScope.Children</code> rolled into 1, and we can put it on fixtures and/or testcases. Here’s the code i’m gonna run to test this “parallel mode” out:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture1</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">A</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"a start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"a end"</span><span class="p">);</span>
+	<span class="p">}</span>
+	
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">B</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"b start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"b end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture2</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">C</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"c start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"c end"</span><span class="p">);</span>
+	<span class="p">}</span>
+	
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">D</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"d start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"d end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Based on the above, we expect both fixtures to start at the same time. With both test fixtures having a parallel &amp; non-parallel testcase, do the parallelizable testcases run first, or do the non-parallel ones run first? <em>drumroll</em>:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c start
+a start
+b start
+d start
+b end
+d end
+c end
+a end
+</code></pre></div></div>
+
+<p>Ah just as expecte… wait a sec! The hell’s goin on over here?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>a start
+b start
+</code></pre></div></div>
+
+<p>What? <code class="language-plaintext highlighter-rouge">B</code> started before <code class="language-plaintext highlighter-rouge">A</code> finished? But we marked <code class="language-plaintext highlighter-rouge">A</code> as parallel and <code class="language-plaintext highlighter-rouge">B</code> as non-parallel!</p>
+
+<p>Its almost as if both test cases in each fixture ran in parallel! Wouldn’t it have made more sense for the parallel ones to get first dibs, then all the non-parallel peasants line up after it?</p>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/queue.jpg" alt="queue" title="queue" /></p>
+
+<p>To get a clearer picture on what’s going on here, let’s add another non-parallel testcase to <code class="language-plaintext highlighter-rouge">MyFixture2</code>, then only run that fixture (instead of both fixtures):</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture2</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">C</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"c start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"c end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">D</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"d start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"d end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default. it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">E</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"e start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"e end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>And when running just this 1 fixture, the output is:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[10:19:17.405 PM] c start
+[10:19:20.404 PM] d start
+[10:19:20.406 PM] d end
+[10:19:23.435 PM] e start
+[10:19:23.447 PM] e end
+[10:19:25.412 PM] c end
+</code></pre></div></div>
+
+<p>It seems that <code class="language-plaintext highlighter-rouge">E</code> (the 2nd non-parallel testcase we added), only started after the 1st non-parallel testcase (<code class="language-plaintext highlighter-rouge">D</code>) ended.</p>
+
+<p>The point here is that when you mix parallel &amp; non-parallel ingredients into a bowl, you essentially get the equivalent of 2 queues - 1 for parallel execution, and 1 for non-parallel execution.</p>
+
+<p>Some analogies to help understand this are:</p>
+<ul>
+  <li>Theres a line for VIP’s, and another line for plebs/normies. Both lines run side-by-side (much like 2 bouncers each guarding 1 queue each outside of a club).</li>
+  <li>Theres a fast road lane, and a slow road lane. Both lanes run side-by-side (much like a highway).</li>
+</ul>
+
+<p><img src="https://raw.githubusercontent.com/vitawebsitedesign/blog/master/assets/overtaking-lane.jpg" alt="fast lane slow lane" title="fast lane slow lane" /></p>
+
+<h2 id="hitting-the-cpu-core-limit">Hitting the CPU core limit</h2>
+<p>Finally we can move on to exciting stuff - hitting the thread limit in nUnit!</p>
+
+<p>I have a 4-core machine. From nUnit documentation:</p>
+
+<blockquote>
+  <p>NUnit uses the processor count or 2, whichever is greater. For example, on a four processor machine <a href="https://github.com/nunit/docs/wiki/LevelOfParallelism-Attribute">the default value is 4</a></p>
+</blockquote>
+
+<p>So technically speaking, nUnit will only be able to use up to 4 threads on my machine. Once it needs more, all bets are off the table. Any “extra” tests which are meant to run in parallel will instead be blocked until a thread becomes free.</p>
+
+<p>To demonstrate this point, we need a bigger example. Hows about… 2 parallel fixtures, each containing 2 parallel testcases &amp; 2 non-parallel testcases:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture1</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">A</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase1 start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase1 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">B</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase2 start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase2 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default, it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">C</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase3 start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase3 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default, it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">D</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase4 start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture1/TestCase4 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+<span class="k">internal</span> <span class="k">class</span> <span class="nc">MyFixture2</span>
+<span class="p">{</span>
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">E</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase1 start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase1 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="p">[</span><span class="nf">Parallelizable</span><span class="p">(</span><span class="n">ParallelScope</span><span class="p">.</span><span class="n">Self</span><span class="p">)]</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">F</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase2 start"</span><span class="p">);</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">8000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase2 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default, it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">G</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase3 start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase3 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+
+	<span class="c1">// Here we omit the Parallelizable attribute, so by default, it will run in non-parallel mode</span>
+	<span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+	<span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">H</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase4 start"</span><span class="p">);</span>
+		<span class="n">TestContext</span><span class="p">.</span><span class="n">Progress</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Fixture2/TestCase4 end"</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Awwww yeah, this is more like it. I feel the blood coarsing through my veins. The output on my 4-core machine is:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[8:40:44.906 PM] Fixture1/TestCase1 start
+[8:40:44.907 PM] Fixture2/TestCase1 start
+[8:40:46.635 PM] Fixture1/TestCase3 start
+[8:40:46.640 PM] Fixture2/TestCase3 start
+[8:40:46.642 PM] Fixture1/TestCase3 end
+[8:40:46.657 PM] Fixture2/TestCase3 end
+[8:40:49.698 PM] Fixture1/TestCase4 start
+[8:40:49.700 PM] Fixture2/TestCase4 start
+[8:40:49.702 PM] Fixture1/TestCase4 end
+[8:40:49.704 PM] Fixture2/TestCase4 end
+[8:40:49.714 PM] Fixture1/TestCase2 start
+[8:40:49.716 PM] Fixture2/TestCase2 start
+[8:40:51.629 PM] Fixture1/TestCase1 end
+[8:40:51.633 PM] Fixture2/TestCase1 end
+[8:40:57.715 PM] Fixture1/TestCase2 end
+[8:40:57.725 PM] Fixture2/TestCase2 end
+</code></pre></div></div>
+
+<p>Pay attention to the first 4 lines (representing the 4 threads running on my 4-core machine):</p>
+
+<ul>
+  <li>CPU Core 1: <code class="language-plaintext highlighter-rouge">Fixture1/TestCase1</code></li>
+  <li>CPU Core 2: <code class="language-plaintext highlighter-rouge">Fixture2/TestCase1</code></li>
+  <li>CPU Core 3: <code class="language-plaintext highlighter-rouge">Fixture1/TestCase3</code></li>
+  <li>CPU Core 4: <code class="language-plaintext highlighter-rouge">Fixture2/TestCase3</code></li>
+</ul>
+
+<p>The first 2 (<code class="language-plaintext highlighter-rouge">Fixture1/TestCase1</code> &amp; <code class="language-plaintext highlighter-rouge">Fixture2/TestCase1</code>) are ones we marked as parallel, and the bottom 2 are the ones we marked non-parallel. Until one of these 4 ends, a thread won’t be free to run another testcase, as proven by the lines:</p>
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">...</span>
+<span class="p">[</span><span class="m">8</span><span class="p">:</span><span class="m">40</span><span class="p">:</span><span class="m">46.657</span> <span class="n">PM</span><span class="p">]</span> <span class="n">Fixture2</span><span class="p">/</span><span class="n">TestCase3</span> <span class="n">end</span>
+<span class="p">[</span><span class="m">8</span><span class="p">:</span><span class="m">40</span><span class="p">:</span><span class="m">49.698</span> <span class="n">PM</span><span class="p">]</span> <span class="n">Fixture1</span><span class="p">/</span><span class="n">TestCase4</span> <span class="n">start</span>
+<span class="p">...</span>
+</code></pre></div></div>
+
+<p>In fact, <code class="language-plaintext highlighter-rouge">Fixture1/TestCase2</code> &amp; <code class="language-plaintext highlighter-rouge">Fixture2/TestCase2</code> are waiting for a free thread too, even though we marked them for parallel execution. Ah… isn’t parallelism quite an interesting specimen to observe?</p>
+
+<h2 id="closing-notes">Closing notes</h2>
+<h3 id="stamta">STA/MTA?</h3>
+<p>The nUnit documentation sometimes uses the abbreviation <em>STA</em> or <em>MTA</em>. These refer to <em>Single Threaded Architecture</em> &amp; <em>Multi Threaded Architecture</em>; the non-parallel &amp; parallel nUnit architectures.</p>
+
+<h3 id="deterministic">Deterministic?</h3>
+<p>No dice - parallel tests are non-deterministic! Everytime you hit the run button, parallel tests may end in different orders. This means your tests need to be thread-safe to produce determinsitic pass/fail results.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+<p>The nUnit team worked hard to give us parallelism. We should understand how it works so that we can leverage it to dramatically improve test execution scalability &amp; developer productivity.</p>
+
+<p>And lets face it - when devs start spinning in their chairs &amp; twiddling their thumbs because the build takes so damn long, its a sign to roll up your sleeves &amp; start improving the efficiency of internal processes, such as test suite execution speed.</p>
+
+<p>Given the non-deterministic nature of tests, the nUnit team gave devs a business-viable migration option when it comes to improving their test execution speed; incremental migration. And this is the <code class="language-plaintext highlighter-rouge">Parallelizable</code> attribute that we know of today.</p>
+
+  </div><a class="u-url" href="/2019/10/01/parallelizable-nunit-fixtures-and-testcases.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

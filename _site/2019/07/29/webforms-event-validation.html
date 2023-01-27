@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Working around WebForms Event Validation | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Working around WebForms Event Validation" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="WebForms Event Validation feature means that the form will only postback if the controls havent been tampered with (e.g.: someone setting malicious input via JavaScript)." />
+<meta property="og:description" content="WebForms Event Validation feature means that the form will only postback if the controls havent been tampered with (e.g.: someone setting malicious input via JavaScript)." />
+<link rel="canonical" href="http://localhost:4000/2019/07/29/webforms-event-validation.html" />
+<meta property="og:url" content="http://localhost:4000/2019/07/29/webforms-event-validation.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-07-29T00:00:00+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Working around WebForms Event Validation" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2019-07-29T00:00:00+10:00","datePublished":"2019-07-29T00:00:00+10:00","description":"WebForms Event Validation feature means that the form will only postback if the controls havent been tampered with (e.g.: someone setting malicious input via JavaScript).","headline":"Working around WebForms Event Validation","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/07/29/webforms-event-validation.html"},"url":"http://localhost:4000/2019/07/29/webforms-event-validation.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#example">Example</a></li>
+<li class="toc-entry toc-h2"><a href="#workaround">Workaround</a></li>
+<li class="toc-entry toc-h2"><a href="#unofficial-workaround">Unofficial workaround?</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#1-flick-off-page-level-event-validation">1. Flick off page-level event validation</a></li>
+<li class="toc-entry toc-h3"><a href="#2-add-a-class">2. Add a class</a></li>
+<li class="toc-entry toc-h3"><a href="#3-dont-postback-the-control">3. Dont postback the control</a></li>
+</ul>
+</li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Working around WebForms Event Validation</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2019-07-29T00:00:00+10:00" itemprop="datePublished">
+        Jul 29, 2019
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>WebForms Event Validation feature means that the form will only postback if the controls havent been tampered with (e.g.: someone setting malicious input via JavaScript).</p>
+
+<p>On a more technical level, its basically a hash of all the trusted control values, which is then compared prior to postback.</p>
+
+<p>The problem comes when you change to data after the page load, which is “outside” the values webforms trusts.</p>
+
+<h2 id="example">Example</h2>
+<p>A common use-case is changing dropdown options after page load.</p>
+
+<div class="language-c# highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">MyPage</span><span class="p">.</span><span class="n">aspx</span><span class="p">.</span><span class="n">cs</span><span class="p">:</span>
+<span class="n">Dropdown</span><span class="p">.</span><span class="n">DataSource</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="p">{</span> <span class="m">1</span> <span class="p">};</span>
+</code></pre></div></div>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;asp:DropDownList</span> <span class="na">ID=</span><span class="s">"Dropdown"</span> <span class="na">runat=</span><span class="s">"server"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/asp:DropDownList&gt;</span>
+</code></pre></div></div>
+
+<p>Fine so far. And now lets change the dropdown options.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span>
+	<span class="kd">var</span> <span class="nx">option</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="dl">'</span><span class="s1">&lt;option/&gt;</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span> <span class="na">value</span><span class="p">:</span> <span class="mi">2</span> <span class="p">});</span>
+	<span class="nx">$</span><span class="p">(</span><span class="dl">'</span><span class="s1">#&lt;%: Dropdown.ClientID %&gt;</span><span class="dl">'</span><span class="p">).</span><span class="nx">add</span><span class="p">(</span><span class="nx">option</span><span class="p">);</span>
+<span class="o">&lt;</span><span class="sr">/script</span><span class="err">&gt;
+</span></code></pre></div></div>
+
+<p>This new selectable value “2” is “outside” the values webforms trusts.</p>
+
+<p>So when you post 1, its all good. But then post back 2, and webforms will shout at the top of its lungs, saying event validation failed.</p>
+
+<h2 id="workaround">Workaround</h2>
+<p>The main issue is that we dont want event validation.</p>
+
+<p>But WebForms only allows us to change that at the site-wide and page level.</p>
+
+<p>Cant change it at component-level, like for our dropdown (e.g.: some asp web control attribute like EnableEventValidation=False).</p>
+
+<h2 id="unofficial-workaround">Unofficial workaround?</h2>
+<p>Well, theres 3 options.</p>
+
+<h3 id="1-flick-off-page-level-event-validation">1. Flick off page-level event validation</h3>
+<p>Not recommended, its there to keep us safe</p>
+
+<h3 id="2-add-a-class">2. Add a class</h3>
+<p>Event validation is declared through SupportsEventValidation class attribute.</p>
+
+<p>The attribute does not apply to children.</p>
+
+<p>So you can just make your own Dropdown class that inherits from ASP’s dropdown, then use that.</p>
+
+<p>Creating a class that shouldnt be necessary seems messy.</p>
+
+<h3 id="3-dont-postback-the-control">3. Dont postback the control</h3>
+<p>By this, i mean putting the asp web control OUTSIDE the form that asp renders.</p>
+
+<p>Usually you can shove it between the closing &lt;form/&gt; tag, and the closing &lt;body/&gt; tag.</p>
+
+<p>This effectively mimicks 2, but in a cleaner fashion.</p>
+
+  </div><a class="u-url" href="/2019/07/29/webforms-event-validation.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

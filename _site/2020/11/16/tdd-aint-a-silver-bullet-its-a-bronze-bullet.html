@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>TDD aint a silver bullet - its a bronze bullet | Mementos</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="TDD aint a silver bullet - its a bronze bullet" />
+<meta name="author" content="Michael Nguyen" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="You ever hear someone relay a quote from a famous person, apply it to a situation while disregarding context, &amp; then discover they got burned? Example: “It’s far better to buy a wonderful company at a fair price, than a fair company at a wonderful price” This is a Warren Buffet quote regarding “overinflated” share prices that dont justify their price-to-earning ratio. In the modern era of trading (&amp; especially market situations involving public participants), most of the money is actually made on speculative momentum-based short-term trend plays involving incomplete information, rather than “wonderful” companies such as McDonalds: The point: humans naturally want complex things to be simple, so that their cognitive load decreases. But certain things are complicated. And oversimplifying something can often hold negative effects. And this applies to TDD. TDD is fantastic, but there’s certain situations where it just doesn’t cut the cheese. Unintentionally taking on unnecessary schedule risk Most software companies (especially those with limited resources such as Start-ups), have certain exposure to something called schedule risk. This is basically when time-to-market becomes a priority for the business. In this case, anything that threatens time-to-market needs to be pushed down the priority list. And this includes test coverage. It doesn’t matter if its TDD, BDD, ATDD or “tests after code”. During right situations, priorities need to be aligned correctly to maximise project success. And in this case, doing TDD “just because that’s what good software engineers do” is harmful. Moreso because TDD has a higher upfront cost than tests-after-code. High requirements volatility Depending on the company domain, certain products just have volatile requirements. It can’t be avoided - its just the nature of the biz. This is especially true for businesses building good customer feedback loops. These are quick-turnaround, highly competitive markets, &amp; involve multiple products continually try to out-beat each other &amp; come on top of the pack. The cycle never ends. In this case, TDD is still beneficial. But if the project doesn’t already have decent test coverage, going from 0% to 50% can introduce significant risk for the product. Theres no point to TDD if the product needs to be disbanded because of business failure. “I thought i was a genius - my bad” The software world is full of “unknown unknowns”. Sometimes you just don’t have that squeaky-clean picture of the exact code &amp; changes needed to get that meaty ticket to prod in fast, qualitiative &amp; safe manner. An engineer applying TDD in this scenario will encounter multiple rounds of TDD. They create an initial set of tests, then halfway through the ticket they discover additional information, need to change interfaces/semantics &amp; need to update their tests again. Depending on the number of “TDD rounds”, this can be quite expensive. This is especially true for ambitious projects where requirements aren’t clear. Perhaps the company is testing the waters with a new product, &amp; they just want to see if it garners “interest” before investing additional resources into the project. Oh god, will the refactoring ever end? In the end-game of TDD, test coverage is quite high, the release cycle gets fast &amp; tight. Just the way we like it. But test coverage doesn’t have to be 100%. In fact, for very large &amp; complex products in a company with limited resources, it’s better to leave out that other 10%. If the other uncovered 10% is low-impact features that you know isn’t gonna break, then the overhead of maintaining continually-breaking tests might not be worth the coverage benefit. It’s good to strive to be perfect, just don’t expect perfect. Otherwise you’ll overcommit to a practice, lose situational context &amp; start inefficiently investing time &amp; money. Eh, not a silver bullet…. BUT, bronze bullets are still good for most business products anyways. Software is complicated &amp; involves many scenarios. Use that brain &amp; apply the right tool for the right job. TDD is great, just be sure that you’re winning from it, not losing to it. In the end of the day, the highest priority is business success, not the egotistic feeling of being a “good software engineer”. Theres more to being a good software engineer than smashing out code. In fact, applying solid practices that maximize business success is often more valuable that being a code monkey." />
+<meta property="og:description" content="You ever hear someone relay a quote from a famous person, apply it to a situation while disregarding context, &amp; then discover they got burned? Example: “It’s far better to buy a wonderful company at a fair price, than a fair company at a wonderful price” This is a Warren Buffet quote regarding “overinflated” share prices that dont justify their price-to-earning ratio. In the modern era of trading (&amp; especially market situations involving public participants), most of the money is actually made on speculative momentum-based short-term trend plays involving incomplete information, rather than “wonderful” companies such as McDonalds: The point: humans naturally want complex things to be simple, so that their cognitive load decreases. But certain things are complicated. And oversimplifying something can often hold negative effects. And this applies to TDD. TDD is fantastic, but there’s certain situations where it just doesn’t cut the cheese. Unintentionally taking on unnecessary schedule risk Most software companies (especially those with limited resources such as Start-ups), have certain exposure to something called schedule risk. This is basically when time-to-market becomes a priority for the business. In this case, anything that threatens time-to-market needs to be pushed down the priority list. And this includes test coverage. It doesn’t matter if its TDD, BDD, ATDD or “tests after code”. During right situations, priorities need to be aligned correctly to maximise project success. And in this case, doing TDD “just because that’s what good software engineers do” is harmful. Moreso because TDD has a higher upfront cost than tests-after-code. High requirements volatility Depending on the company domain, certain products just have volatile requirements. It can’t be avoided - its just the nature of the biz. This is especially true for businesses building good customer feedback loops. These are quick-turnaround, highly competitive markets, &amp; involve multiple products continually try to out-beat each other &amp; come on top of the pack. The cycle never ends. In this case, TDD is still beneficial. But if the project doesn’t already have decent test coverage, going from 0% to 50% can introduce significant risk for the product. Theres no point to TDD if the product needs to be disbanded because of business failure. “I thought i was a genius - my bad” The software world is full of “unknown unknowns”. Sometimes you just don’t have that squeaky-clean picture of the exact code &amp; changes needed to get that meaty ticket to prod in fast, qualitiative &amp; safe manner. An engineer applying TDD in this scenario will encounter multiple rounds of TDD. They create an initial set of tests, then halfway through the ticket they discover additional information, need to change interfaces/semantics &amp; need to update their tests again. Depending on the number of “TDD rounds”, this can be quite expensive. This is especially true for ambitious projects where requirements aren’t clear. Perhaps the company is testing the waters with a new product, &amp; they just want to see if it garners “interest” before investing additional resources into the project. Oh god, will the refactoring ever end? In the end-game of TDD, test coverage is quite high, the release cycle gets fast &amp; tight. Just the way we like it. But test coverage doesn’t have to be 100%. In fact, for very large &amp; complex products in a company with limited resources, it’s better to leave out that other 10%. If the other uncovered 10% is low-impact features that you know isn’t gonna break, then the overhead of maintaining continually-breaking tests might not be worth the coverage benefit. It’s good to strive to be perfect, just don’t expect perfect. Otherwise you’ll overcommit to a practice, lose situational context &amp; start inefficiently investing time &amp; money. Eh, not a silver bullet…. BUT, bronze bullets are still good for most business products anyways. Software is complicated &amp; involves many scenarios. Use that brain &amp; apply the right tool for the right job. TDD is great, just be sure that you’re winning from it, not losing to it. In the end of the day, the highest priority is business success, not the egotistic feeling of being a “good software engineer”. Theres more to being a good software engineer than smashing out code. In fact, applying solid practices that maximize business success is often more valuable that being a code monkey." />
+<link rel="canonical" href="http://localhost:4000/2020/11/16/tdd-aint-a-silver-bullet-its-a-bronze-bullet.html" />
+<meta property="og:url" content="http://localhost:4000/2020/11/16/tdd-aint-a-silver-bullet-its-a-bronze-bullet.html" />
+<meta property="og:site_name" content="Mementos" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-11-16T00:00:00+11:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="TDD aint a silver bullet - its a bronze bullet" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Michael Nguyen"},"dateModified":"2020-11-16T00:00:00+11:00","datePublished":"2020-11-16T00:00:00+11:00","description":"You ever hear someone relay a quote from a famous person, apply it to a situation while disregarding context, &amp; then discover they got burned? Example: “It’s far better to buy a wonderful company at a fair price, than a fair company at a wonderful price” This is a Warren Buffet quote regarding “overinflated” share prices that dont justify their price-to-earning ratio. In the modern era of trading (&amp; especially market situations involving public participants), most of the money is actually made on speculative momentum-based short-term trend plays involving incomplete information, rather than “wonderful” companies such as McDonalds: The point: humans naturally want complex things to be simple, so that their cognitive load decreases. But certain things are complicated. And oversimplifying something can often hold negative effects. And this applies to TDD. TDD is fantastic, but there’s certain situations where it just doesn’t cut the cheese. Unintentionally taking on unnecessary schedule risk Most software companies (especially those with limited resources such as Start-ups), have certain exposure to something called schedule risk. This is basically when time-to-market becomes a priority for the business. In this case, anything that threatens time-to-market needs to be pushed down the priority list. And this includes test coverage. It doesn’t matter if its TDD, BDD, ATDD or “tests after code”. During right situations, priorities need to be aligned correctly to maximise project success. And in this case, doing TDD “just because that’s what good software engineers do” is harmful. Moreso because TDD has a higher upfront cost than tests-after-code. High requirements volatility Depending on the company domain, certain products just have volatile requirements. It can’t be avoided - its just the nature of the biz. This is especially true for businesses building good customer feedback loops. These are quick-turnaround, highly competitive markets, &amp; involve multiple products continually try to out-beat each other &amp; come on top of the pack. The cycle never ends. In this case, TDD is still beneficial. But if the project doesn’t already have decent test coverage, going from 0% to 50% can introduce significant risk for the product. Theres no point to TDD if the product needs to be disbanded because of business failure. “I thought i was a genius - my bad” The software world is full of “unknown unknowns”. Sometimes you just don’t have that squeaky-clean picture of the exact code &amp; changes needed to get that meaty ticket to prod in fast, qualitiative &amp; safe manner. An engineer applying TDD in this scenario will encounter multiple rounds of TDD. They create an initial set of tests, then halfway through the ticket they discover additional information, need to change interfaces/semantics &amp; need to update their tests again. Depending on the number of “TDD rounds”, this can be quite expensive. This is especially true for ambitious projects where requirements aren’t clear. Perhaps the company is testing the waters with a new product, &amp; they just want to see if it garners “interest” before investing additional resources into the project. Oh god, will the refactoring ever end? In the end-game of TDD, test coverage is quite high, the release cycle gets fast &amp; tight. Just the way we like it. But test coverage doesn’t have to be 100%. In fact, for very large &amp; complex products in a company with limited resources, it’s better to leave out that other 10%. If the other uncovered 10% is low-impact features that you know isn’t gonna break, then the overhead of maintaining continually-breaking tests might not be worth the coverage benefit. It’s good to strive to be perfect, just don’t expect perfect. Otherwise you’ll overcommit to a practice, lose situational context &amp; start inefficiently investing time &amp; money. Eh, not a silver bullet…. BUT, bronze bullets are still good for most business products anyways. Software is complicated &amp; involves many scenarios. Use that brain &amp; apply the right tool for the right job. TDD is great, just be sure that you’re winning from it, not losing to it. In the end of the day, the highest priority is business success, not the egotistic feeling of being a “good software engineer”. Theres more to being a good software engineer than smashing out code. In fact, applying solid practices that maximize business success is often more valuable that being a code monkey.","headline":"TDD aint a silver bullet - its a bronze bullet","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2020/11/16/tdd-aint-a-silver-bullet-its-a-bronze-bullet.html"},"url":"http://localhost:4000/2020/11/16/tdd-aint-a-silver-bullet-its-a-bronze-bullet.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href=" /assets/main.css">
+  <link rel="stylesheet" href=" /assets/minima-custom-theme.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Mementos" /></head><body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Mementos</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <aside class="wrapper-toc">
+  <h2 class="toc-header">Table of contents</h2>
+  <nav>
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#unintentionally-taking-on-unnecessary-schedule-risk">Unintentionally taking on unnecessary schedule risk</a></li>
+<li class="toc-entry toc-h1"><a href="#high-requirements-volatility">High requirements volatility</a></li>
+<li class="toc-entry toc-h1"><a href="#i-thought-i-was-a-genius---my-bad">“I thought i was a genius - my bad”</a></li>
+<li class="toc-entry toc-h1"><a href="#oh-god-will-the-refactoring-ever-end">Oh god, will the refactoring ever end?</a></li>
+<li class="toc-entry toc-h1"><a href="#eh-not-a-silver-bullet-but-bronze-bullets-are-still-good-for-most-business-products-anyways">Eh, not a silver bullet…. BUT, bronze bullets are still good for most business products anyways.</a></li>
+</ul>
+  </nav>
+</aside>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">TDD aint a silver bullet - its a bronze bullet</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2020-11-16T00:00:00+11:00" itemprop="datePublished">
+        Nov 16, 2020
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Michael Nguyen</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>You ever hear someone relay a quote from a famous person, apply it to a situation while disregarding context, &amp; then discover they got burned? Example:</p>
+<blockquote>
+  <p><em>“It’s far better to buy a wonderful company at a fair price, than a fair company at a wonderful price”</em></p>
+</blockquote>
+
+<p>This is a Warren Buffet quote regarding “overinflated” share prices that dont justify their price-to-earning ratio.</p>
+
+<p>In the modern era of trading (&amp; especially market situations involving public participants), most of the money is actually made on speculative momentum-based short-term <a href="https://www.investopedia.com/terms/t/trendtrading.asp">trend</a> plays involving incomplete information, rather than <strong>“wonderful”</strong> companies such as McDonalds:</p>
+
+<hr />
+
+<p><a href="https://i.imgur.com/O6Cfk1T.png"><img src="https://i.imgur.com/O6Cfk1T.png" alt="Love their nuggets though" title="Love their nuggets though" /></a></p>
+
+<hr />
+
+<p><a href="https://i.imgur.com/Rg9dRJB.png"><img src="https://i.imgur.com/Rg9dRJB.png" alt="One of the big winners for 2020. Good momentum-based short-term incomplete information play here" title="One of the big winners for 2020. Good momentum-based short-term incomplete information play here" /></a></p>
+
+<hr />
+
+<p>The point: humans naturally want complex things to be simple, so that their cognitive load decreases. But certain things are complicated. And oversimplifying something can often hold negative effects.</p>
+
+<p>And this applies to <a href="http://agiledata.org/essays/tdd.html">TDD</a>. TDD is fantastic, but there’s certain situations where it just doesn’t cut the cheese.</p>
+
+<h1 id="unintentionally-taking-on-unnecessary-schedule-risk">Unintentionally taking on unnecessary schedule risk</h1>
+<p>Most software companies (especially those with limited resources such as Start-ups), have certain exposure to something called <a href="http://acqnotes.com/acqnote/tasks/schedule-risk">schedule risk</a>. This is basically when time-to-market becomes a priority for the business.</p>
+
+<p>In this case, anything that threatens time-to-market needs to be pushed down the priority list. And this includes <strong>test coverage</strong>.</p>
+
+<p>It doesn’t matter if its TDD, <a href="https://en.wikipedia.org/wiki/Behavior-driven_development">BDD</a>, <a href="https://en.wikipedia.org/wiki/Acceptance_test%E2%80%93driven_development">ATDD</a> or “tests after code”. During right situations, priorities need to be aligned <em>correctly</em> to maximise project success. And in this case, doing TDD “just because that’s what good software engineers do” is harmful. Moreso because TDD has a higher upfront cost than tests-after-code.</p>
+
+<h1 id="high-requirements-volatility">High requirements volatility</h1>
+<p>Depending on the company domain, certain products just have volatile requirements. It can’t be avoided - its just the nature of the biz.</p>
+
+<p>This is especially true for businesses building good <a href="https://www.atlassian.com/company/events/summit-us/watch-sessions/2012/archives/scrum-kanban/building-an-effective-customer-feedback-loop">customer feedback loops</a>. These are quick-turnaround, highly competitive markets, &amp; involve multiple products continually try to out-beat each other &amp; come on top of the pack. The cycle never ends.</p>
+
+<p>In this case, TDD is <em>still</em> beneficial. But if the project doesn’t already have decent test coverage, going from 0% to 50% can introduce <strong>significant</strong> risk for the product. Theres no point to TDD if the product needs to be disbanded because of business failure.</p>
+
+<h1 id="i-thought-i-was-a-genius---my-bad">“I thought i was a genius - my bad”</h1>
+<p>The software world is full of “<a href="https://www.pmi.org/learning/library/characterizing-unknown-unknowns-6077">unknown unknowns</a>”. Sometimes you just don’t have that squeaky-clean picture of the exact code &amp; changes needed to get that meaty ticket to prod in fast, qualitiative &amp; safe manner.</p>
+
+<p>An engineer applying TDD in this scenario will encounter multiple rounds of TDD. They create an initial set of tests, then halfway through the ticket they discover additional information, need to change interfaces/semantics &amp; need to update their tests again.</p>
+
+<p>Depending on the number of “TDD rounds”, this can be quite expensive. This is especially true for ambitious projects where requirements aren’t clear. Perhaps the company is testing the waters with a new product, &amp; they just want to see if it garners “interest” before investing additional resources into the project.</p>
+
+<h1 id="oh-god-will-the-refactoring-ever-end">Oh god, will the refactoring ever end?</h1>
+<p>In the end-game of TDD, test coverage is quite high, the release cycle gets fast &amp; tight. Just the way we like it.</p>
+
+<p>But test coverage doesn’t <strong><em>have</em></strong> to be 100%. In fact, for very large &amp; complex products in a company with limited resources, it’s better to leave out that other 10%. If the other uncovered 10% is low-impact features that you know isn’t gonna break, then the overhead of maintaining continually-breaking tests might not be worth the coverage benefit.</p>
+
+<p>It’s good to <em>strive</em> to be perfect, just don’t <em>expect</em> perfect. Otherwise you’ll overcommit to a practice, lose situational context &amp; start inefficiently investing time &amp; money.</p>
+
+<h1 id="eh-not-a-silver-bullet-but-bronze-bullets-are-still-good-for-most-business-products-anyways">Eh, not a silver bullet…. BUT, bronze bullets are still good for most business products anyways.</h1>
+<p>Software is complicated &amp; involves many scenarios. Use that brain &amp; apply the right tool for the right job. TDD is great, just be sure that you’re <strong>winning</strong> from it, not <em>losing</em> to it.</p>
+
+<p>In the end of the day, the highest priority is business success, not the egotistic feeling of being a “good software engineer”. Theres more to being a good software engineer than smashing out code. In fact, applying solid practices that maximize business success is often more valuable that being a code monkey.</p>
+
+  </div><a class="u-url" href="/2020/11/16/tdd-aint-a-silver-bullet-its-a-bronze-bullet.html" hidden></a>
+
+  
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Mementos</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Mementos</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>blog</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

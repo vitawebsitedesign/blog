@@ -2,6 +2,7 @@
 title: How StringBuilder achieves superior performance over string appending
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 StringBuilder is faster than String for append operations.
 

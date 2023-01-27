@@ -2,6 +2,7 @@
 title: The illusion of reusability be a harsh mistress
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 Reusable libraries are often created to reduce development workload across multiple teams.

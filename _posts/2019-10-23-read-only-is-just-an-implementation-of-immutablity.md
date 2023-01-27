@@ -2,6 +2,7 @@
 title: Read-only is just an implementation of immutablity
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 The `System.Collections.Generic` .NET namespace has a `IReadOnlyCollection<T>` interface.
 

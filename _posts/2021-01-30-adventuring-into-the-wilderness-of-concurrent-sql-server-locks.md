@@ -2,6 +2,7 @@
 title: Adventuring into the wilderness of concurrent SQL Server locks
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 SQL Server reads & writes to rows. These can happen from multiple [transactions](https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transactions-transact-sql?view=sql-server-ver15), so some concurrency control is built-in.

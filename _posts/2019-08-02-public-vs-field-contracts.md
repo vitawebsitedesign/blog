@@ -2,6 +2,7 @@
 title: Public vs Field contracts
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 Consider below:
 

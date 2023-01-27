@@ -2,6 +2,7 @@
 title: SQL Server seek predicate precedence
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 When a table seek occurs, you may see something called "seek predicate" in execution plan:
 

@@ -2,6 +2,7 @@
 title: Blindly applying defensive programming is a recipe for disaster
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 Depending on the system requirements, fault tolerance may be a priority for your product. This is especially true in mission-critical systems that need to consider high availability, data integrity, security & physical safety.

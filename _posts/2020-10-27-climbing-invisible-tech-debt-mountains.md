@@ -2,6 +2,7 @@
 title: Climbing invisible tech debt mountains
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 We need 10% time, but startups don’t work that way. In fact, startups are bloody hard.

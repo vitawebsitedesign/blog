@@ -2,6 +2,7 @@
 title: Maximizing HashSet bucket distribution efficiency
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 The .NET HashSet operates around the idea of "buckets". The distribution of these buckets is affected by `Object.GetHashCode`, which generates hash codes for items.

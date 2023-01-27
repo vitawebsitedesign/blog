@@ -2,6 +2,7 @@
 title: Exploring the parallel options in the nUnit execution framework
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 Every build server has a cpu limit, and once you hit it you'll find your nUnit tests taking forever to finish, ultimately slowing down your build process.
 

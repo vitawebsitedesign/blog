@@ -2,6 +2,7 @@
 title: When and how Task.WhenAll improves performance
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 
 Task.WhenAll() runs asynchronous tasks in parallel.

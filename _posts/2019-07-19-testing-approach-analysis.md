@@ -2,6 +2,7 @@
 title: Hollistic cost/benenfit analysis of testing approaches
 layout: post
 author: Michael Nguyen
+toc: true
 ---
 Below is summary of common test approaches:
 
